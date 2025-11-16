@@ -9,13 +9,13 @@ const StudentDashboard = () => {
   
   // Mock student data (will be fetched from blockchain later)
   const [studentData] = useState({
-    name: 'Saurabh Singh',
-    rollNumber: '2214094',
+    name: 'Rishu Kumar',
+    rollNumber: '22124081',
     degree: 'B.Tech',
     branch: 'Information Technology',
     graduationYear: '2026',
     certId: 'CERT-2025-IVL8XHG4T',
-    email: 'saurabh.singh@example.com',
+    email: 'rishu.kumar@example.com',
     issueDate: '2025-11-16',
     transactionHash: '0x1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f',
     blockNumber: '847256',
