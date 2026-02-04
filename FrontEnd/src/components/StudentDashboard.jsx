@@ -1,29 +1,69 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import axios from 'axios';
 import { GraduationCap, Download, Share2, Shield, FileText, QrCode, ArrowLeft, CheckCircle, User } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './StudentDashboard.css';
+import { clearSession } from '../auth/session';
+
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  
-  // Mock student data (will be fetched from blockchain later)
-  const [studentData] = useState({
-    name: 'Rishu Kumar',
-    rollNumber: '22124081',
-    degree: 'B.Tech',
-    branch: 'Information Technology',
-    graduationYear: '2026',
-    certId: 'CERT-2025-IVL8XHG4T',
-    email: 'rishu.kumar@example.com',
-    issueDate: '2025-11-16',
-    transactionHash: '0x1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f',
-    blockNumber: '847256',
-    status: 'Verified',
-    issuer: 'XYZ University'
-  });
+  const [searchParams] = useSearchParams();
 
+  const [studentData, setStudentData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showQR, setShowQR] = useState(false);
+
+  // Default certId can be overridden via query param: ?certId=...
+  const certIdFromQuery = searchParams.get('certId');
+  const defaultCertId = certIdFromQuery || 'CERT-2025-IVL8XHG4T';
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        const response = await axios.get(`${API_BASE_URL}/api/verify/${defaultCertId}`);
+        const data = response.data;
+
+        // Map backend response to dashboard-friendly structure.
+        const issueDate = new Date(
+          (data.timestamp || 0) * 1000
+        ).toISOString().slice(0, 10);
+
+        setStudentData({
+          // In a real app, these would come from your DB; for now keep demo values.
+          name: 'Demo Student',
+          rollNumber: 'N/A',
+          degree: 'N/A',
+          branch: 'N/A',
+          graduationYear: 'N/A',
+          email: 'demo@example.com',
+
+          certId: data.certId,
+          issueDate,
+          transactionHash: 'On-chain record (view on explorer)',
+          blockNumber: data.blockNumber,
+          status: data.exists ? 'Verified' : 'Not Found',
+          issuer: data.issuerName || 'Unknown Issuer',
+        });
+      } catch (err) {
+        setError(
+          err.response?.data?.error ||
+            err.response?.data?.details ||
+            'Failed to load certificate data.'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [defaultCertId]);
 
   const handleDownload = () => {
     // TODO: Generate and download PDF certificate
@@ -31,7 +71,7 @@ const StudentDashboard = () => {
   };
 
   const handleShare = () => {
-    const verificationUrl = `${window.location.origin}/verify/${studentData.certId}`;
+    const verificationUrl = `${window.location.origin}/verify/${studentData?.certId || ''}`;
     if (navigator.share) {
       navigator.share({
         title: 'My Alumni Certificate',
@@ -45,6 +85,7 @@ const StudentDashboard = () => {
   };
 
   const handleLogout = () => {
+    clearSession();
     navigate('/');
   };
 
@@ -66,26 +107,50 @@ const StudentDashboard = () => {
           </div>
           <div className="user-info-badge">
             <User size={18} />
-            <span>{studentData.name}</span>
+            <span>{studentData?.name || 'Student'}</span>
           </div>
         </div>
       </header>
 
       <div className="dashboard-main">
-        {/* Welcome Section */}
-        <div className="welcome-card">
-          <div className="welcome-content">
-            <h2 className="welcome-title">Welcome back, {studentData.name.split(' ')[0]}! 👋</h2>
-            <p className="welcome-subtitle">Your credentials are securely stored on the blockchain</p>
+        {loading && (
+          <div className="dashboard-loading">
+            <p>Loading certificate data...</p>
           </div>
-          <div className="verification-badge-large">
-            <CheckCircle size={24} />
-            <span>Verified</span>
-          </div>
-        </div>
+        )}
 
-        {/* Main Grid */}
-        <div className="dashboard-grid">
+        {error && !loading && (
+          <div className="dashboard-error">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && !studentData && (
+          <div className="dashboard-error">
+            <p>No certificate data available.</p>
+          </div>
+        )}
+
+        {!loading && !error && studentData && (
+          <>
+            {/* Welcome Section */}
+            <div className="welcome-card">
+              <div className="welcome-content">
+                <h2 className="welcome-title">
+                  Welcome back, {(studentData.name || 'Student').split(' ')[0]}! 👋
+                </h2>
+                <p className="welcome-subtitle">
+                  Your credentials are securely stored on the blockchain
+                </p>
+              </div>
+              <div className="verification-badge-large">
+                <CheckCircle size={24} />
+                <span>{studentData.status === 'Verified' ? 'Verified' : 'Not Verified'}</span>
+              </div>
+            </div>
+
+            {/* Main Grid */}
+            <div className="dashboard-grid">
           {/* Certificate Details Card */}
           <div className="dashboard-card certificate-card">
             <div className="card-header">
@@ -93,7 +158,9 @@ const StudentDashboard = () => {
                 <FileText size={24} />
                 <h3>Certificate Details</h3>
               </div>
-              <span className="status-badge verified">{studentData.status}</span>
+              <span className={`status-badge ${studentData.status === 'Verified' ? 'verified' : 'unverified'}`}>
+                {studentData.status}
+              </span>
             </div>
 
             <div className="details-grid">
@@ -202,7 +269,7 @@ const StudentDashboard = () => {
           </div>
 
           {/* QR Code Card */}
-          {showQR && (
+          {showQR && studentData && (
             <div className="dashboard-card qr-card">
               <div className="card-header">
                 <div className="card-header-title">
@@ -229,6 +296,8 @@ const StudentDashboard = () => {
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );

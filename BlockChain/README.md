@@ -13,7 +13,7 @@ BlockChain/
 ├── test/
 │   └── AlumniVerification.t.sol        # Comprehensive test suite
 ├── lib/                                 # Dependencies (forge-std)
-├── .env.example                         # Environment variables template
+├── env.example                          # Environment variables template (copy to .env)
 ├── foundry.toml                         # Foundry configuration
 └── README.md                            # This file
 ```
@@ -38,7 +38,7 @@ BlockChain/
 
 ```powershell
 # Copy the example environment file
-Copy-Item .env.example .env
+Copy-Item env.example .env
 
 # Edit .env and add your private key
 # NEVER commit your real private key!

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
   Upload,
   Users,
@@ -10,8 +12,12 @@ import {
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import "./AdminPanel.css";
+import { clearSession, getAuthHeader, getUser } from "../auth/session";
+
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 const AdminPanel = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     rollNumber: "",
@@ -25,6 +31,28 @@ const AdminPanel = () => {
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState("");
+  const [stats, setStats] = useState({ totalRecords: null, network: null });
+
+  const user = getUser();
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const resp = await axios.get(`${API_BASE_URL}/api/admin/stats`, {
+          headers: {
+            ...getAuthHeader(),
+          },
+        });
+        setStats(resp.data);
+      } catch (err) {
+        // Stats are optional; keep UI functional even if it fails.
+        console.error("Failed to load stats:", err);
+      }
+    };
+
+    loadStats();
+  }, []);
 
   const degrees = ["B.Tech", "M.Tech", "MBA", "MCA", "B.Sc", "M.Sc", "PhD"];
   const branches = [
@@ -82,19 +110,25 @@ const AdminPanel = () => {
     if (!validateForm()) return;
 
     setLoading(true);
+    setApiError("");
 
-    // Simulate API call (replace with actual backend call later)
-    setTimeout(() => {
-      const mockResult = {
-        transactionHash: "0x" + Math.random().toString(16).substr(2, 64),
-        certId: formData.certId,
-        timestamp: new Date().toISOString(),
-        blockNumber: Math.floor(Math.random() * 1000000),
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/admin/add`, formData, {
+        headers: {
+          ...getAuthHeader(),
+        },
+      });
+      const data = response.data;
+
+      const finalResult = {
+        transactionHash: data.transactionHash,
+        certId: data.certId,
+        timestamp: data.timestamp,
+        blockNumber: data.blockNumber,
       };
 
-      setResult(mockResult);
+      setResult(finalResult);
       setSubmitted(true);
-      setLoading(false);
 
       // Reset form after 5 seconds
       setTimeout(() => {
@@ -109,7 +143,20 @@ const AdminPanel = () => {
           certId: "",
         });
       }, 5000);
-    }, 2000);
+    } catch (error) {
+      const message =
+        error.response?.data?.error ||
+        error.response?.data?.details ||
+        "Failed to submit alumni record. Please try again.";
+      setApiError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    navigate("/");
   };
 
   const generateCertId = () => {
@@ -138,7 +185,13 @@ const AdminPanel = () => {
           </div>
           <div className="blockchain-badge">
             <div className="pulse-dot"></div>
-            <span>Polygon Mumbai</span>
+            <span>{stats.network?.name ? `${stats.network.name}` : "Polygon Mumbai"}</span>
+          </div>
+          <div className="admin-user-actions">
+            <span className="admin-user-email">{user?.email || "Admin"}</span>
+            <button className="admin-logout-btn" onClick={handleLogout}>
+              Logout
+            </button>
           </div>
         </div>
       </header>
@@ -151,7 +204,9 @@ const AdminPanel = () => {
               <Users size={24} />
             </div>
             <div className="stat-content">
-              <h3 className="stat-value">1,247</h3>
+              <h3 className="stat-value">
+                {typeof stats.totalRecords === "number" ? stats.totalRecords : "—"}
+              </h3>
               <p className="stat-label">Alumni Verified</p>
             </div>
           </div>
@@ -189,6 +244,13 @@ const AdminPanel = () => {
               records
             </p>
           </div>
+
+          {apiError && (
+            <div className="api-error-banner">
+              <AlertCircle size={18} className="api-error-icon" />
+              <span>{apiError}</span>
+            </div>
+          )}
 
           {!submitted ? (
             <form onSubmit={handleSubmit} className="alumni-form">

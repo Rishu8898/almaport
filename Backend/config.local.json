@@ -1,0 +1,11 @@
+{
+  "RPC_URL": "https://rpc-mumbai.maticvigil.com",
+  "CONTRACT_ADDRESS": "0xYourDeployedContractAddressHere",
+  "PRIVATE_KEY": "your_private_key_without_0x_prefix",
+  "GOOGLE_CLIENT_ID": "your_google_oauth_client_id.apps.googleusercontent.com",
+  "JWT_SECRET": "change_me_to_a_long_random_string",
+  "ADMIN_EMAILS": "admin1@example.com,admin2@example.com",
+  "ADMIN_EMAIL_DOMAIN": ""
+}
+
+

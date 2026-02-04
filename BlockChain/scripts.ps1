@@ -13,7 +13,7 @@ function Load-Env {
         }
         Write-Host "✅ Environment variables loaded" -ForegroundColor Green
     } else {
-        Write-Host "⚠️  .env file not found. Copy .env.example to .env" -ForegroundColor Yellow
+        Write-Host "⚠️  .env file not found. Copy env.example to .env (or set env vars manually)" -ForegroundColor Yellow
     }
 }
 

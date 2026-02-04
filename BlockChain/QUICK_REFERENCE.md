@@ -7,7 +7,7 @@ BlockChain/
 ├── src/AlumniVerification.sol           ⭐ Main Smart Contract
 ├── script/DeployAlumniVerification.s.sol ⭐ Deployment Scripts
 ├── test/AlumniVerification.t.sol        ⭐ Test Suite (30 tests)
-├── .env.example                         📝 Environment Template
+├── env.example                          📝 Environment Template (copy to .env)
 ├── README.md                            📖 Quick Start
 ├── SETUP_GUIDE.md                       📖 Complete Setup
 ├── BACKEND_INTEGRATION.md               📖 Backend Guide

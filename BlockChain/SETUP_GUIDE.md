@@ -151,7 +151,7 @@ Test result: ok. 30 passed; 0 failed; finished in 1.23s
 
 ```powershell
 # Copy the example env file
-Copy-Item .env.example .env
+Copy-Item env.example .env
 
 # Edit .env file and add your details
 notepad .env
