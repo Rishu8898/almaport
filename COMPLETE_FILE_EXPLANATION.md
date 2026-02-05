@@ -1,825 +1,1269 @@
-# 📚 Complete File Explanation - Alumni Verification Portal
+# 📚 Alumni Verification Portal - Complete Documentation
 
 ## 🎯 Project Overview
+A blockchain-based alumni credential verification system combining **React Frontend**, **Node.js Backend**, and **Solidity Smart Contracts** on Polygon Mumbai. This system provides tamper-proof, instantly verifiable educational credentials using decentralized blockchain storage.
 
-The **Alumni Verification Portal** is a blockchain-based system for storing and verifying educational credentials. It consists of:
-- **Frontend**: React application with modern UI
-- **Blockchain**: Solidity smart contracts on Polygon
-- **Purpose**: Tamper-proof, instant verification of alumni credentials
+**Key Features**:
+- ✅ Tamper-proof credential storage
+- ✅ Instant verification via QR codes
+- ✅ Decentralized & immutable records
+- ✅ Admin role-based access control
+- ✅ Public verification (anyone can verify)
+
+**Tech Stack**:
+- Frontend: React 19 + Vite + React Router + Axios
+- Backend: Node.js + Express + Ethers.js v5 + JWT Authentication
+- Blockchain: Solidity 0.8.20 + Foundry + Polygon Mumbai
+- Network: Polygon Mumbai testnet (chainId: 80001)
 
 ---
 
 ## 📁 Project Structure
-
 ```
 alma-port/
-├── FrontEnd/          # React frontend application
-├── BlockChain/        # Solidity smart contracts (Foundry)
-└── Backend/           # (To be implemented) Node.js backend
+├── FrontEnd/           # React app (3 main pages)
+├── BlockChain/         # Solidity contracts & tests
+└── Backend/            # Node.js API server
 ```
 
 ---
 
-## 🎨 FRONTEND FILES EXPLANATION
+## 🎨 FRONTEND - 3 Main Pages
 
-### 📄 **Configuration Files**
+### 1. HomePage.jsx - Landing/Login
+**Purpose**: Entry point with dual login options
+- **Admin Portal**: Purple card with shield icon → Redirects to `/admin`
+- **Student Portal**: Green card with graduation cap → Redirects to `/student/dashboard`
+- **Stats**: Shows 1,247+ alumni verified, 98.5% success rate
+- **Buttons**: Gmail login (TODO) + Demo access
 
-#### 1. **`package.json`**
-**Purpose**: Defines project dependencies and scripts
-- **Dependencies**:
-  - `react` (^19.2.0) - UI library
-  - `react-dom` (^19.2.0) - React DOM rendering
-  - `react-router-dom` (^7.9.6) - Client-side routing
-  - `axios` (^1.13.2) - HTTP client for API calls
-  - `lucide-react` (^0.553.0) - Modern icon library
-  - `qrcode.react` (^4.2.0) - QR code generation
-- **Scripts**:
-  - `npm run dev` - Start development server
-  - `npm run build` - Build for production
-  - `npm run lint` - Run ESLint
-  - `npm run preview` - Preview production build
-
-#### 2. **`vite.config.js`**
-**Purpose**: Vite build tool configuration
-- Configures React plugin for Vite
-- Enables fast HMR (Hot Module Replacement)
-- Optimizes build process
-
-#### 3. **`eslint.config.js`**
-**Purpose**: Code quality and linting rules
-- Enforces React best practices
-- Checks for unused variables
-- Validates JSX syntax
-- Ignores `dist` folder
-
-#### 4. **`index.html`**
-**Purpose**: Main HTML entry point
-- Root `<div id="root">` for React mounting
-- Links to Vite SVG favicon
-- Sets viewport for responsive design
-- Loads `main.jsx` as entry script
+**Key State**: `hoveredCard` tracks hover animations
 
 ---
 
-### 📄 **Source Files**
+### 2. AdminPanel.jsx ⭐ CRITICAL
+**Purpose**: Add new alumni records to blockchain
 
-#### 5. **`src/main.jsx`**
-**Purpose**: Application entry point
-- **Key Functions**:
-  - Imports React and ReactDOM
-  - Creates root element
-  - Renders `<App />` component
-  - Enables StrictMode for development warnings
-- **Flow**: Entry → App → Routes → Components
+**Form Fields**:
+- Name, Roll Number, Degree, Branch, Graduation Year, Certificate ID
 
-#### 6. **`src/App.jsx`**
-**Purpose**: Main application component with routing
-- **Key Features**:
-  - Sets up React Router (BrowserRouter)
-  - Defines three routes:
-    - `/` → HomePage (landing/login page)
-    - `/admin` → AdminPanel (add alumni records)
-    - `/student/dashboard` → StudentDashboard (view credentials)
-- **Purpose**: Central routing hub for navigation
-
-#### 7. **`src/index.css`**
-**Purpose**: Global CSS styles
-- Resets default browser styles
-- Sets Inter font family
-- Configures code font (monospace)
-- Base styling for entire app
-
-#### 8. **`src/App.css`**
-**Purpose**: App-level styles
-- Global resets (margin, padding, box-sizing)
-- Body font configuration
-- Root element styling
-
----
-
-### 🎨 **Component Files**
-
-#### 9. **`src/components/HomePage.jsx`** ⭐ **MOST IMPORTANT PAGE**
-**Purpose**: Landing page with login options
-
-**Key Features**:
-1. **Hero Section**:
-   - Animated gradient background
-   - Brand title and subtitle
-   - Feature highlights (Instant Verification, Tamper-Proof, Blockchain Secured)
-
-2. **Login Cards**:
-   - **Admin Portal Card**:
-     - Purple gradient theme
-     - Shield icon
-     - Features: Add Records, Issue Certificates, Manage Credentials
-     - Gmail login button + Demo access
-   - **Student Portal Card**:
-     - Green gradient theme
-     - Graduation cap icon
-     - Features: View Records, Download Certificates, Share Verification
-     - Gmail login button + Demo access
-
-3. **Stats Section**:
-   - 1,247+ Verified Alumni
-   - 100% Secure Records
-   - 98.5% Success Rate
-
-4. **Navigation Functions**:
-   - `handleAdminLogin()` - Navigate to `/admin`
-   - `handleStudentLogin()` - Navigate to `/student/dashboard`
-   - `handleGmailLogin()` - Placeholder for OAuth (TODO)
-
-**State Management**:
-- `hoveredCard` - Tracks which card is hovered for animations
-
-**Design Elements**:
-- Glass morphism header
-- Pulse animation on blockchain badge
-- Hover effects on cards
-- Responsive grid layout
-
----
-
-#### 10. **`src/components/AdminPanel.jsx`** ⭐ **MOST IMPORTANT PAGE**
-**Purpose**: Admin interface to add alumni records to blockchain
-
-**Key Features**:
-
-1. **Header Section**:
-   - Logo with Shield icon
-   - Title and subtitle
-   - Blockchain status badge (Polygon Mumbai)
-
-2. **Stats Cards**:
-   - Alumni Verified count (1,247)
-   - Success Rate (98.5%)
-   - Tamper Proof status (100%)
-
-3. **Alumni Registration Form**:
-   - **Input Fields**:
-     - Full Name (required, text input)
-     - Roll Number (required, text input)
-     - Degree (required, dropdown: B.Tech, M.Tech, MBA, etc.)
-     - Branch (required, dropdown: CS, IT, Mechanical, etc.)
-     - Graduation Year (required, number, validated 1950-current+5)
-     - Certificate ID (required, with auto-generate button)
-   
-   - **Form Validation**:
-     - Real-time error messages
-     - Required field checks
-     - Year range validation
-     - Error highlighting
-
-4. **Form Submission**:
-   - Currently uses mock data (simulated blockchain transaction)
-   - Generates fake transaction hash
-   - Creates timestamp and block number
-   - **TODO**: Replace with actual backend API call
-
-5. **Success Screen**:
-   - Animated checkmark icon
-   - Displays:
-     - Transaction Hash (blockchain receipt)
-     - Certificate ID
-     - Block Number
-     - Timestamp
-   - QR Code generation for verification
+**Process**:
+```
+1. Admin fills form → Validates client-side
+2. Clicks Submit → POST to /api/admin/add
+3. Backend generates hash → Calls smart contract
+4. Transaction mined → Returns receipt
+5. Success screen shows:
+   - Transaction Hash (clickable on Polygonscan)
+   - Block Number
+   - QR Code (for verification)
    - Auto-resets after 5 seconds
+```
 
-**State Management**:
-- `formData` - Stores all form inputs
-- `loading` - Submission loading state
-- `submitted` - Success screen toggle
-- `result` - Transaction result data
-- `errors` - Form validation errors
+**Current**: Uses mock data (replace line 86-112 with real API call)
 
-**Helper Functions**:
-- `handleChange()` - Updates form data
-- `validateForm()` - Validates all inputs
-- `handleSubmit()` - Processes form submission
-- `generateCertId()` - Auto-generates certificate ID
-
-**Integration Point**:
-- Line 86-112: Mock API call (replace with `axios.post('/api/admin/add')`)
+**Integration Code**:
+```javascript
+const response = await axios.post(
+  'http://localhost:5000/api/admin/add',
+  formData,
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+```
 
 ---
 
-#### 11. **`src/components/StudentDashboard.jsx`** ⭐ **MOST IMPORTANT PAGE**
-**Purpose**: Student portal to view verified credentials
+### 3. StudentDashboard.jsx
+**Purpose**: View verified credentials
 
-**Key Features**:
+**Displays**:
+- Certificate details (name, roll number, degree, etc.)
+- Blockchain transaction info (hash, block number)
+- Tamper-proof badge + security features
+- QR code for instant verification
 
-1. **Header**:
-   - Back to home button
-   - Dashboard title
-   - User info badge (student name)
-
-2. **Welcome Card**:
-   - Personalized greeting
-   - Verification badge (Verified status)
-   - Security message
-
-3. **Certificate Details Card**:
-   - **Displays**:
-     - Full Name
-     - Roll Number
-     - Degree
-     - Branch
-     - Graduation Year
-     - Certificate ID
-     - Issue Date
-     - Issuer (Institution name)
-   - **Actions**:
-     - Download Certificate (placeholder)
-     - Share verification link
-     - Show QR code
-
-4. **Blockchain Details Card**:
-   - **Transaction Info**:
-     - Transaction Hash (full hash display)
-     - Block Number
-     - Network (Polygon Mumbai with live indicator)
-   - **Security Features**:
-     - Tamper-Proof Record
-     - Immutable Data
-     - Publicly Verifiable
-     - Decentralized Storage
-
-5. **QR Code Card** (Toggleable):
-   - Generates QR code for verification URL
-   - Displays verification link
-   - Scannable for instant verification
-
-**State Management**:
-- `studentData` - Mock student information (will be fetched from API)
-- `showQR` - Toggle QR code display
-
-**Functions**:
-- `handleDownload()` - Placeholder for PDF generation
-- `handleShare()` - Uses native share API or clipboard fallback
-- `handleLogout()` - Navigate back to home
-
-**Data Structure** (Mock):
+**API Call**: 
 ```javascript
-{
-  name, rollNumber, degree, branch, graduationYear,
-  certId, email, issueDate, transactionHash,
-  blockNumber, status, issuer
+GET /api/verify/:certId  // Fetches from blockchain
+```
+
+---
+
+## ⛓️ BLOCKCHAIN - Smart Contract
+
+### AlumniVerification.sol ⭐ CRITICAL
+
+**Core Functions**:
+```solidity
+addAlumniRecord(certId, dataHash)    // Add record (admin only)
+getRecord(certId)                     // Fetch record (view - free)
+verifyRecord(certId, dataHash)        // Verify data (public)
+```
+
+**Data Structure**:
+```solidity
+struct AlumniRecord {
+  string certId;        // Unique ID
+  bytes32 dataHash;     // Hash of alumni data
+  address issuer;       // Admin wallet
+  uint256 timestamp;    // When added
+  uint256 blockNumber;  // Block number
+  bool exists;          // Exists flag
+  string issuerName;    // Institution name
 }
 ```
 
-**Integration Point**:
-- Replace mock data with API call: `axios.get('/api/student/:email')`
+**Security**:
+- Only authorized issuers can add records
+- No updates/deletes (immutable)
+- Anyone can verify (public verification)
+- Prevents duplicate certificate IDs
 
----
-
-### 🎨 **CSS Files**
-
-#### 12. **`src/components/HomePage.css`**
-**Purpose**: Styles for HomePage component
-- Gradient backgrounds
-- Glass morphism effects
-- Card hover animations
-- Responsive breakpoints
-- Pulse animations
-
-#### 13. **`src/components/AdminPanel.css`**
-**Purpose**: Styles for AdminPanel component
-- Form styling
-- Input field designs
-- Success screen animations
-- QR code container
-- Stat cards with gradients
-
-#### 14. **`src/components/StudentDashboard.css`**
-**Purpose**: Styles for StudentDashboard component
-- Dashboard layout
-- Card designs
-- Blockchain info display
-- QR code styling
-- Action button styles
-
----
-
-### 📄 **Documentation Files**
-
-#### 15. **`README.md`**
-**Purpose**: Basic React + Vite template documentation
-- Quick start guide
-- Plugin information
-- ESLint configuration notes
-
-#### 16. **`PROJECT_DOCUMENTATION.md`**
-**Purpose**: Comprehensive frontend documentation
-- Feature list
-- Technology stack
-- Project structure
-- API integration points
-- Design highlights
-- Responsive breakpoints
-- Next steps for backend integration
-
-#### 17. **`HOME_PAGE_IMPLEMENTATION.md`**
-**Purpose**: Detailed implementation guide for HomePage
-- Component breakdown
-- Authentication flow
-- Mock data structure
-- Routes configuration
-- Future integration points
-
----
-
-### 🖼️ **Asset Files**
-
-#### 18. **`public/vite.svg`**
-**Purpose**: Vite logo/favicon
-- SVG format for scalability
-- Used as site favicon
-
-#### 19. **`src/assets/react.svg`**
-**Purpose**: React logo asset
-- SVG format
-- Can be used in components if needed
-
----
-
-## ⛓️ BLOCKCHAIN FILES EXPLANATION
-
-### 📄 **Configuration Files**
-
-#### 20. **`foundry.toml`**
-**Purpose**: Foundry framework configuration
-- Sets source directory (`src`)
-- Output directory (`out`)
-- Libraries directory (`lib`)
-- Configures Solidity compiler settings
-
-#### 21. **`Makefile`**
-**Purpose**: Make commands for common tasks
-- Build shortcuts
-- Test commands
-- Deployment helpers
-
-#### 22. **`scripts.ps1`**
-**Purpose**: PowerShell helper functions
-- Environment loading
-- Contract building
-- Testing shortcuts
-- Deployment functions
-
----
-
-### 📄 **Smart Contract Files**
-
-#### 23. **`src/AlumniVerification.sol`** ⭐ **MOST IMPORTANT FILE**
-**Purpose**: Main smart contract for alumni verification
-
-**Key Components**:
-
-1. **State Variables**:
-   - `owner` - Contract deployer address
-   - `authorizedIssuers` - Mapping of authorized admin addresses
-   - `issuerNames` - Mapping of institution names
-   - `records` - Mapping of certificate ID to AlumniRecord struct
-   - `certificateIds` - Array of all certificate IDs
-   - `totalRecords` - Counter for total records
-
-2. **Data Structure**:
-   ```solidity
-   struct AlumniRecord {
-       string certId;        // Unique certificate ID
-       bytes32 dataHash;     // Hash of alumni data
-       address issuer;       // Issuer's wallet address
-       uint256 timestamp;    // When record was added
-       uint256 blockNumber;   // Block number
-       bool exists;          // Existence flag
-       string issuerName;    // Institution name
-   }
-   ```
-
-3. **Core Functions**:
-   - **`addAlumniRecord(certId, dataHash)`**:
-     - Adds new record to blockchain
-     - Only authorized issuers can call
-     - Prevents duplicate certificate IDs
-     - Emits `AlumniRecordAdded` event
-     - Returns: success, timestamp, blockNumber
-   
-   - **`verifyRecord(certId, dataHash)`**:
-     - Verifies record by comparing hashes
-     - Public function (anyone can verify)
-     - Returns: isValid, issuer, issuerName, timestamp, blockNumber
-   
-   - **`getRecord(certId)`**:
-     - View function (no gas cost)
-     - Returns all record information
-     - Used for displaying certificate details
-   
-   - **`generateDataHash(...)`**:
-     - Helper function to create consistent hash
-     - Takes: name, rollNumber, degree, branch, year, certId
-     - Returns: keccak256 hash
-     - Must match backend hash generation
-
-4. **Admin Functions**:
-   - **`authorizeIssuer(address, name)`** - Add new authorized issuer (owner only)
-   - **`revokeIssuer(address)`** - Remove issuer authorization (owner only)
-   - **`transferOwnership(address)`** - Transfer contract ownership
-
-5. **View Functions**:
-   - `recordExists(certId)` - Check if record exists
-   - `getAllCertificateIds()` - Get all certificate IDs
-   - `getTotalRecords()` - Get total count
-   - `isAuthorizedIssuer(address)` - Check authorization
-   - `getIssuerName(address)` - Get institution name
-
-6. **Security Features**:
-   - Access control modifiers (`onlyOwner`, `onlyAuthorizedIssuer`)
-   - Input validation
-   - Duplicate prevention
-   - Event emissions for transparency
-   - Immutable records (cannot be modified)
-
-7. **Events**:
-   - `AlumniRecordAdded` - Emitted when record is added
-   - `IssuerAuthorized` - Emitted when issuer is authorized
-   - `IssuerRevoked` - Emitted when issuer is revoked
-   - `RecordVerified` - Emitted during verification
-
-**Gas Estimates**:
-- Deploy: ~2,000,000 gas
-- Add Record: ~150,000 gas
-- Verify: ~50,000 gas
+**Gas Costs**:
+- Deploy: ~2M gas
+- Add Record: ~150k gas
+- Verify: ~50k gas
 - Get Record: 0 gas (view function)
 
 ---
 
-#### 24. **`script/DeployAlumniVerification.s.sol`**
-**Purpose**: Deployment script for smart contract
+## 💼 BACKEND - Node.js API Server
 
-**Contains Three Contracts**:
+### Core Files
+- **server.js** - Express app setup
+- **blockchain/config.js** - Web3 provider, wallet, contract
+- **routes/admin.js** - Add record endpoint
+- **routes/verify.js** - Get & verify record endpoints
+- **routes/auth.js** - Google OAuth authentication
+- **utils/hashUtils.js** - Generate keccak256 hash
+- **middleware/auth.js** - JWT verification
+- **auth/jwt.js** - Token signing/verification
 
-1. **`DeployAlumniVerification`**:
-   - Main deployment function
-   - Reads `PRIVATE_KEY` from environment
-   - Reads `INSTITUTION_NAME` (defaults to "XYZ University")
-   - Deploys contract
-   - Logs deployment details
+### API Endpoints
 
-2. **`SetupAlumniVerification`**:
-   - Adds multiple authorized issuers
-   - Batch authorization function
-   - Used after deployment
+#### POST /api/admin/add (Admin Only)
+**Auth**: Bearer token required
+**Body**:
+```json
+{
+  "name": "John Doe",
+  "rollNumber": "2214094",
+  "degree": "B.Tech",
+  "branch": "IT",
+  "graduationYear": 2026,
+  "certId": "CERT-2025-ABC123"
+}
+```
+**Response**:
+```json
+{
+  "certId": "CERT-2025-ABC123",
+  "transactionHash": "0x...",
+  "blockNumber": 123456,
+  "timestamp": "2025-11-16T12:34:56.000Z"
+}
+```
 
-3. **`TestAlumniVerification`**:
-   - Test functions for deployed contract
-   - `testAddRecord()` - Adds sample record
-   - `testVerifyRecord()` - Verifies existing record
+#### GET /api/verify/:certId (Public)
+**Auth**: None
+**Response**:
+```json
+{
+  "certId": "CERT-2025-ABC123",
+  "dataHash": "0x...",
+  "issuer": "0x...",
+  "issuerName": "XYZ University",
+  "timestamp": 1731750000,
+  "blockNumber": 847256,
+  "exists": true
+}
+```
 
-**Usage**:
+#### POST /api/verify/check (Public)
+**Body**: Provide alumni data to verify
+```json
+{
+  "certId": "CERT-2025-ABC123",
+  "name": "John Doe",
+  "rollNumber": "2214094",
+  "degree": "B.Tech",
+  "branch": "IT",
+  "graduationYear": 2026
+}
+```
+**Response**:
+```json
+{
+  "certId": "CERT-2025-ABC123",
+  "valid": true,
+  "issuer": "0x...",
+  "issuerName": "XYZ University"
+}
+```
+
+#### POST /api/auth/google (Login)
+**Body**:
+```json
+{
+  "credential": "<google_id_token>",
+  "userType": "admin"
+}
+```
+**Response**:
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "email": "admin@example.com",
+    "name": "Admin Name",
+    "role": "admin"
+  }
+}
+```
+
+---
+
+## 🔄 Data Flow Example
+
+### Adding Alumni Record
+```
+1. AdminPanel → POST /api/admin/add
+2. Backend validates + authenticates (middleware/auth.js)
+3. Backend generates hash (utils/hashUtils.js)
+   Hash = keccak256(name + rollNumber + degree + branch + year + certId)
+4. Backend calls contract.addAlumniRecord(certId, hash)
+5. Transaction mined on Polygon network
+6. Backend returns { transactionHash, blockNumber, timestamp }
+7. Frontend displays success with QR code
+```
+
+### Verifying Alumni Record
+```
+1. Student/Employer → GET /api/verify/:certId
+2. Backend queries contract.getRecord(certId)
+3. Returns stored record data
+4. (Optional) POST /api/verify/check with alumni data
+5. Backend compares provided hash with on-chain hash
+6. Returns valid=true/false
+```
+
+### Authentication Flow
+```
+1. User clicks "Login with Gmail" → Google OAuth flow
+2. Google generates ID token → Frontend sends to backend
+3. Backend verifies Google token signature
+4. Checks if email authorized as admin
+5. Generates JWT token (7-day expiration)
+6. Frontend stores in localStorage
+7. Subsequent requests include: Authorization: Bearer <token>
+8. Backend middleware (requireAuth) verifies JWT
+```
+
+---
+
+## ⚙️ Environment Setup
+
+### Create config.local.json (Backend)
+```json
+{
+  "RPC_URL": "https://rpc-mumbai.maticvigil.com",
+  "CONTRACT_ADDRESS": "0x...",
+  "PRIVATE_KEY": "0x...",
+  "JWT_SECRET": "your-secret-key",
+  "PORT": 5000,
+  "CORS_ORIGIN": "http://localhost:5173",
+  "GOOGLE_CLIENT_ID": "your-google-client-id",
+  "ADMIN_EMAILS": "admin@example.com,admin2@example.com"
+}
+```
+
+### Setup Steps
 ```bash
+# 1. Blockchain - Build contract
+cd BlockChain
+forge build
+
+# 2. Backend - Install & run
+cd ../Backend
+npm install
+npm run dev
+
+# 3. Frontend - Install & run (new terminal)
+cd ../FrontEnd
+npm install
+npm run dev
+```
+
+---
+
+## 🔑 Key Integration Points
+
+### Frontend-to-Backend
+- AdminPanel submits to `POST /api/admin/add` with Bearer token
+- StudentDashboard fetches from `GET /api/verify/:certId`
+- HomePage receives JWT from `POST /api/auth/google`
+
+### Backend-to-Blockchain
+- All contract calls via `blockchain/config.js`
+- Hash generation must match Solidity exactly
+- Transactions signed with admin wallet
+
+### Hash Generation (Critical!)
+**Must match in Frontend, Backend, AND Solidity**:
+```javascript
+keccak256(abi.encodePacked(name, rollNumber, degree, branch, graduationYear, certId))
+```
+
+---
+
+## 📊 Important Files Summary
+
+| File | Purpose |
+|------|---------|
+| HomePage.jsx | Landing page with login options |
+| AdminPanel.jsx | Form to add records (mock → API) |
+| StudentDashboard.jsx | Display verified credentials |
+| AlumniVerification.sol | Smart contract (immutable records) |
+| server.js | Express app entry point |
+| routes/admin.js | Add record API endpoint |
+| routes/verify.js | Get/verify record endpoints |
+| blockchain/config.js | Web3 provider + contract |
+| utils/hashUtils.js | Generate keccak256 hash |
+| middleware/auth.js | JWT authentication |
+
+---
+
+---
+
+## 🔧 Prerequisites & Installation
+
+### Requirements
+- **Node.js** (v16+) - For frontend and backend
+- **Foundry** - For smart contract development
+  ```bash
+  curl -L https://foundry.paradigm.xyz | bash
+  foundryup
+  ```
+- **Git** - For version control
+- **MetaMask Wallet** - For testing transactions
+- **Polygon Mumbai Testnet MATIC** - Get free from [Faucet](https://faucet.polygon.technology/)
+
+### Installation Steps
+
+#### 1. Clone Repository
+```bash
+git clone https://github.com/Rishu8898/almaport.git
+cd alma-port
+```
+
+#### 2. Setup Blockchain
+```bash
+cd BlockChain
+forge install
+forge build
+forge test
+# Deploy to Mumbai (see deployment section below)
+```
+
+#### 3. Setup Backend
+```bash
+cd ../Backend
+npm install
+# Create config.local.json (see configuration section)
+npm run dev
+```
+
+#### 4. Setup Frontend
+```bash
+cd ../FrontEnd
+npm install
+npm run dev
+# Access at http://localhost:5173
+```
+
+---
+
+## ⚙️ Detailed Configuration
+
+### Blockchain - Foundry Setup
+
+**foundry.toml**:
+```toml
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+[rpc_endpoints]
+mumbai = "https://rpc-mumbai.maticvigil.com"
+```
+
+**Deploy Contract**:
+```bash
+cd BlockChain
+export PRIVATE_KEY="0x..."
+export INSTITUTION_NAME="Your University"
 forge script script/DeployAlumniVerification.s.sol:DeployAlumniVerification \
-  --rpc-url $POLYGON_MUMBAI_RPC_URL \
+  --rpc-url https://rpc-mumbai.maticvigil.com \
   --broadcast --verify
 ```
 
+**Save the contract address** - needed for backend config.
+
 ---
 
-#### 25. **`test/AlumniVerification.t.sol`**
-**Purpose**: Comprehensive test suite
-- **Test Coverage**: 30+ test cases
-- Tests all functions
-- Tests access control
-- Tests edge cases
-- Tests events
-- Tests modifiers
+### Backend - Complete Configuration
 
-**Run Tests**:
+**config.local.json** (copy from config.local.example):
+```json
+{
+  "RPC_URL": "https://rpc-mumbai.maticvigil.com",
+  "CONTRACT_ADDRESS": "0x...",
+  "PRIVATE_KEY": "0x...",
+  "JWT_SECRET": "generate-random-secret-key-here",
+  "PORT": 5000,
+  "CORS_ORIGIN": "http://localhost:5173",
+  "GOOGLE_CLIENT_ID": "your-google-client-id.apps.googleusercontent.com",
+  "ADMIN_EMAILS": "admin@example.com,admin2@example.com"
+}
+```
+
+**Alternative .env file**:
+```env
+RPC_URL=https://rpc-mumbai.maticvigil.com
+CONTRACT_ADDRESS=0x...
+PRIVATE_KEY=0x...
+JWT_SECRET=your-secret
+PORT=5000
+CORS_ORIGIN=http://localhost:5173
+GOOGLE_CLIENT_ID=...
+ADMIN_EMAILS=admin@example.com
+```
+
+**Start Backend**:
 ```bash
-forge test
-forge test --gas-report
-forge coverage
+cd Backend
+npm run dev        # Development (auto-restart)
+npm start          # Production
 ```
 
 ---
 
-### 📄 **Documentation Files**
+### Frontend - Environment Setup
 
-#### 26. **`README.md`**
-**Purpose**: Blockchain project documentation
-- Quick start guide
-- Prerequisites
-- Deployment instructions
-- Testing guide
-- Gas usage estimates
-- Network information
-
-#### 27. **`PROJECT_SUMMARY.md`**
-**Purpose**: Complete project overview
-- Architecture diagram
-- System components
-- Data flow
-- Technology stack
-- Deployment process
-- Security considerations
-- Roadmap
-
-#### 28. **`SETUP_GUIDE.md`**
-**Purpose**: Detailed setup instructions
-- Foundry installation
-- Environment setup
-- Contract compilation
-- Testing procedures
-- Deployment steps
-
-#### 29. **`BACKEND_INTEGRATION.md`**
-**Purpose**: Guide for backend integration
-- API endpoint specifications
-- Hash generation examples
-- Web3 integration
-- Error handling
-- Best practices
-
-#### 30. **`COMPLETED.md`**
-**Purpose**: Checklist of completed features
-- Smart contract features
-- Test coverage
-- Documentation status
-
-#### 31. **`QUICK_REFERENCE.md`**
-**Purpose**: Quick command reference
-- Common Foundry commands
-- Deployment shortcuts
-- Testing commands
-- Helper functions
-
----
-
-## 🔄 DATA FLOW EXPLANATION
-
-### Adding an Alumni Record:
-
-```
-1. Admin fills form in AdminPanel.jsx
-   ↓
-2. Frontend validates form data
-   ↓
-3. Frontend sends POST to /api/admin/add
-   ↓
-4. Backend generates hash using generateDataHash()
-   ↓
-5. Backend calls smart contract: addAlumniRecord(certId, hash)
-   ↓
-6. Transaction mined on Polygon blockchain
-   ↓
-7. Backend receives transaction receipt
-   ↓
-8. Frontend displays success with:
-   - Transaction hash
-   - Block number
-   - QR code
+**Create .env in FrontEnd folder**:
+```env
+VITE_BACKEND_URL=http://localhost:5000
+VITE_GOOGLE_CLIENT_ID=your-google-client-id
 ```
 
-### Verifying a Record:
-
-```
-1. User enters certId or scans QR code
-   ↓
-2. Frontend sends GET to /api/verify/:certId
-   ↓
-3. Backend queries blockchain: getRecord(certId)
-   ↓
-4. Backend receives record data
-   ↓
-5. If data provided, backend verifies hash
-   ↓
-6. Frontend displays verification result
+**Start Frontend**:
+```bash
+cd FrontEnd
+npm run dev        # Development
+npm run build      # Production build
+npm run preview    # Preview production
 ```
 
 ---
 
-## 🎯 MOST IMPORTANT PAGES (Detailed)
+## 📝 Smart Contract Deep Dive
 
-### 1. **HomePage.jsx** - Landing & Authentication
+### AlumniVerification.sol - Complete Reference
 
-**Purpose**: Entry point for all users
+#### Contract State
+```solidity
+mapping(address => bool) public authorizedIssuers;     // Admin whitelist
+mapping(address => string) public issuerNames;        // Institution names
+mapping(string => AlumniRecord) public records;       // Certificate -> Record
+string[] public certificateIds;                       // All certificate IDs
+uint256 public totalRecords;                          // Record counter
+address public owner;                                 // Contract owner
+```
 
-**Key Sections**:
-- **Header**: Brand identity with blockchain badge
-- **Hero**: Value proposition and features
-- **Login Cards**: Dual portal access (Admin/Student)
-- **Stats**: Platform metrics
+#### Data Structure
+```solidity
+struct AlumniRecord {
+  string certId;           // Unique certificate ID
+  bytes32 dataHash;        // keccak256(name, rollNumber, degree, branch, year, certId)
+  address issuer;          // Admin who added record
+  uint256 timestamp;       // Block timestamp when added
+  uint256 blockNumber;     // Block number
+  bool exists;             // Existence flag
+  string issuerName;       // Institution name
+}
+```
 
-**User Flow**:
-1. User lands on homepage
-2. Chooses role (Admin or Student)
-3. Clicks login button (Gmail or Demo)
-4. Redirected to respective portal
+#### Core Functions
 
-**Future Enhancements**:
-- Google OAuth integration
-- User session management
-- Role-based access control
+**1. addAlumniRecord(certId, dataHash)**
+- **Access**: Only authorized issuers
+- **Process**:
+  1. Check caller is authorized
+  2. Check certId not duplicate
+  3. Store record with timestamp/block info
+  4. Emit AlumniRecordAdded event
+- **Returns**: (success, timestamp, blockNumber)
+- **Gas**: ~150,000
+
+**2. verifyRecord(certId, dataHash)**
+- **Access**: Public (anyone)
+- **Process**:
+  1. Get stored record
+  2. Compare hashes
+  3. Return verification result
+- **Returns**: (isValid, issuer, issuerName, timestamp, blockNumber)
+- **Gas**: ~50,000
+
+**3. getRecord(certId)**
+- **Access**: Public (view)
+- **Returns**: Complete AlumniRecord struct
+- **Gas**: 0 (view function - free)
+
+**4. generateDataHash(name, rollNumber, degree, branch, graduationYear, certId)**
+- **Purpose**: Create consistent keccak256 hash
+- **Critical**: Must match exactly with backend hash
+- **Formula**: `keccak256(abi.encodePacked(name, rollNumber, degree, branch, graduationYear, certId))`
+
+#### Admin Functions
+
+**authorizeIssuer(address issuer, string memory name)**
+- Owner only
+- Adds new authorized issuer
+- Stores institution name
+
+**revokeIssuer(address issuer)**
+- Owner only
+- Removes authorization
+
+**transferOwnership(address newOwner)**
+- Current owner only
+- Transfers contract ownership
+
+#### Events
+
+```solidity
+event AlumniRecordAdded(string certId, bytes32 dataHash, address issuer, uint256 timestamp);
+event IssuerAuthorized(address indexed issuer, string name);
+event IssuerRevoked(address indexed issuer);
+event RecordVerified(string certId, bool isValid);
+```
 
 ---
 
-### 2. **AdminPanel.jsx** - Record Management
+## 💼 Backend API - Complete Reference
 
-**Purpose**: Add alumni records to blockchain
+### Authentication
 
-**Workflow**:
-1. Admin enters alumni details
-2. Form validates inputs
-3. Certificate ID generated (or manual)
-4. Form submitted
-5. Data sent to backend
-6. Backend creates blockchain transaction
-7. Success screen shows transaction details
-8. QR code generated for verification
+**JWT Token** (7-day expiration):
+```json
+{
+  "email": "admin@example.com",
+  "name": "Admin Name",
+  "role": "admin",
+  "iat": 1704067200,
+  "exp": 1704672000
+}
+```
 
-**Key Features**:
-- Real-time validation
-- Auto-certificate ID generation
-- Transaction tracking
-- QR code for instant verification
-- Auto-reset after success
-
-**Integration Points**:
-- Replace mock submission (line 86-112) with:
-  ```javascript
-  const response = await axios.post('/api/admin/add', formData);
-  setResult(response.data);
-  ```
+**All admin endpoints require**:
+```
+Authorization: Bearer <jwt_token>
+```
 
 ---
 
-### 3. **StudentDashboard.jsx** - Credential Viewing
+### API Endpoints
 
-**Purpose**: View verified credentials
+#### 1. POST /api/auth/google
+**Login endpoint** - No auth required
 
-**Key Sections**:
-- **Welcome Card**: Personalized greeting
+**Request**:
+```json
+{
+  "credential": "<google_id_token>",
+  "userType": "admin"
+}
+```
+
+**Response** (Success):
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "email": "admin@example.com",
+    "name": "Admin User",
+    "role": "admin"
+  }
+}
+```
+
+**Response** (Unauthorized):
+```json
+{
+  "error": "Not authorized for this role"
+}
+```
+
+**Process**:
+1. Verify Google ID token signature
+2. Extract email from token
+3. Check if email in ADMIN_EMAILS or matches ADMIN_EMAIL_DOMAIN
+4. Generate JWT token (7 days)
+5. Return token and user info
+
+---
+
+#### 2. POST /api/admin/add
+**Add alumni record** - Admin only
+
+**Auth**: Bearer token (admin role required)
+
+**Request**:
+```json
+{
+  "name": "John Doe",
+  "rollNumber": "2214094",
+  "degree": "B.Tech",
+  "branch": "Information Technology",
+  "graduationYear": 2026,
+  "certId": "CERT-2025-ABC123"
+}
+```
+
+**Response** (Success - 201):
+```json
+{
+  "certId": "CERT-2025-ABC123",
+  "transactionHash": "0x1234567890abcdef...",
+  "blockNumber": 43982156,
+  "timestamp": "2025-02-05T12:34:56.000Z"
+}
+```
+
+**Response** (Missing Fields - 400):
+```json
+{
+  "error": "Missing required fields",
+  "required": ["name", "rollNumber", "degree", "branch", "graduationYear", "certId"]
+}
+```
+
+**Response** (Unauthorized - 401):
+```json
+{
+  "error": "Missing or invalid Authorization header"
+}
+```
+
+**Response** (Forbidden - 403):
+```json
+{
+  "error": "Forbidden"
+}
+```
+
+**Response** (Error - 500):
+```json
+{
+  "error": "Failed to add alumni record",
+  "details": "Certificate ID already exists"
+}
+```
+
+**Process**:
+1. Verify JWT token
+2. Check admin role
+3. Validate all fields
+4. Generate hash: `keccak256(name, rollNumber, degree, branch, graduationYear, certId)`
+5. Call contract: `addAlumniRecord(certId, hash)`
+6. Wait for transaction receipt
+7. Fetch block data for timestamp
+8. Return transaction details
+
+---
+
+#### 3. GET /api/admin/stats
+**Get platform statistics** - Admin only
+
+**Auth**: Bearer token (admin role required)
+
+**Response** (Success):
+```json
+{
+  "totalRecords": 42,
+  "network": {
+    "chainId": 80001,
+    "name": "maticmum",
+    "rpcUrl": "https://rpc-mumbai.maticvigil.com",
+    "contractAddress": "0x..."
+  }
+}
+```
+
+---
+
+#### 4. GET /api/verify/:certId
+**Get record by certificate ID** - Public (no auth)
+
+**Response** (Record Found):
+```json
+{
+  "certId": "CERT-2025-ABC123",
+  "dataHash": "0x1234567890abcdef...",
+  "issuer": "0xAdminAddress",
+  "issuerName": "XYZ University",
+  "timestamp": 1738771200,
+  "blockNumber": 43982156,
+  "exists": true
+}
+```
+
+**Response** (Record Not Found):
+```json
+{
+  "error": "Record not found",
+  "certId": "CERT-2025-UNKNOWN"
+}
+```
+
+---
+
+#### 5. POST /api/verify/check
+**Verify alumni data against blockchain** - Public (no auth)
+
+**Request**:
+```json
+{
+  "certId": "CERT-2025-ABC123",
+  "name": "John Doe",
+  "rollNumber": "2214094",
+  "degree": "B.Tech",
+  "branch": "Information Technology",
+  "graduationYear": 2026
+}
+```
+
+**Response** (Valid):
+```json
+{
+  "certId": "CERT-2025-ABC123",
+  "valid": true,
+  "issuer": "0xAdminAddress",
+  "issuerName": "XYZ University",
+  "timestamp": 1738771200,
+  "blockNumber": 43982156
+}
+```
+
+**Response** (Invalid/Not Found):
+```json
+{
+  "certId": "CERT-2025-ABC123",
+  "valid": false,
+  "error": "Data mismatch or record not found"
+}
+```
+
+**Process**:
+1. Fetch record by certId
+2. Generate hash from provided data
+3. Compare with on-chain hash
+4. Return verification result
+
+---
+
+#### 6. GET /health
+**Health check** - No auth
+
+**Response**:
+```json
+{
+  "status": "ok",
+  "message": "Alumni Verification Backend running"
+}
+```
+
+---
+
+## 🎨 Frontend Components - Detailed
+
+### File Structure
+```
+FrontEnd/
+├── src/
+│   ├── App.jsx                    # Main router
+│   ├── main.jsx                   # Entry point
+│   ├── index.css                  # Global styles
+│   ├── App.css                    # App styles
+│   ├── components/
+│   │   ├── HomePage.jsx           # Landing page
+│   │   ├── HomePage.css
+│   │   ├── AdminPanel.jsx         # Add records
+│   │   ├── AdminPanel.css
+│   │   ├── StudentDashboard.jsx   # View records
+│   │   ├── StudentDashboard.css
+│   │   ├── ProtectedRoute.jsx     # Auth wrapper
+│   │   └── VerificationPage.jsx   # (Optional)
+│   ├── assets/                    # Images, SVGs
+│   └── auth/
+│       └── session.js             # Auth helper
+├── package.json
+├── vite.config.js
+├── eslint.config.js
+└── index.html
+```
+
+### Routes
+```javascript
+/                       → HomePage (public)
+/admin                  → AdminPanel (admin protected)
+/student/dashboard      → StudentDashboard (public - shows mock data)
+```
+
+### HomePage.jsx
+- **Hero Section**: Brand intro with blockchain badge
+- **Admin Card**: Purple theme, add records feature
+- **Student Card**: Green theme, view records feature
+- **Stats**: 1,247+ verified, 100% secure, 98.5% success rate
+- **Buttons**: Gmail login + Demo access
+
+### AdminPanel.jsx ⭐ CRITICAL
+- **Form Fields**: Name, Roll Number, Degree, Branch, Year, Cert ID
+- **Current**: Mock submission (line 86-112)
+- **Integration**: Replace with `POST /api/admin/add`
+- **Validation**: Client-side checks for required fields
+- **Success**: Shows transaction hash, block number, QR code
+- **Auto-reset**: After 5 seconds
+
+### StudentDashboard.jsx
+- **Welcome Card**: Student name + verification status
 - **Certificate Details**: All credential information
-- **Blockchain Details**: Transaction info and security
-- **QR Code**: Instant verification
-
-**Actions Available**:
-- Download certificate (PDF - TODO)
-- Share verification link
-- Display QR code
-- View blockchain transaction
-
-**Data Display**:
-- Student information
-- Certificate details
-- Blockchain transaction hash
-- Block number
-- Network status
-- Security features
-
-**Integration Points**:
-- Replace mock data (line 11-24) with:
-  ```javascript
-  const response = await axios.get(`/api/student/${email}`);
-  setStudentData(response.data);
-  ```
+- **Blockchain Info**: Transaction hash, block number, network status
+- **QR Code**: Toggleable verification code
+- **Actions**: Download (TODO), Share, View QR
+- **Current**: Mock data (line 11-24)
+- **Integration**: Replace with `GET /api/verify/:certId`
 
 ---
 
-### 4. **AlumniVerification.sol** - Smart Contract
+## 🔄 Complete Data Flow Examples
 
-**Purpose**: Blockchain storage and verification
-
-**Key Operations**:
-
-1. **Adding Records**:
-   - Only authorized issuers
-   - Prevents duplicates
-   - Stores hash (not raw data)
-   - Emits event
-
-2. **Verifying Records**:
-   - Public verification
-   - Hash comparison
-   - Returns issuer info
-   - Emits verification event
-
-3. **Access Control**:
-   - Owner can authorize/revoke issuers
-   - Only authorized issuers can add records
-   - Anyone can verify
-
-**Security Model**:
-- Immutable records (cannot be modified)
-- Hash-based verification (privacy-preserving)
-- Access-controlled writes
-- Public reads
-
----
-
-## 🔗 FILE RELATIONSHIPS
+### Example 1: Adding Alumni Record (End-to-End)
 
 ```
-index.html
-  ↓
-main.jsx (Entry Point)
-  ↓
-App.jsx (Router)
-  ├── HomePage.jsx
-  │   ├── HomePage.css
-  │   └── Navigate to AdminPanel or StudentDashboard
-  │
-  ├── AdminPanel.jsx
-  │   ├── AdminPanel.css
-  │   └── Form → Backend API → Smart Contract
-  │
-  └── StudentDashboard.jsx
-      ├── StudentDashboard.css
-      └── Display → Backend API → Smart Contract
+STEP 1: ADMIN INITIATES
+├─ Opens AdminPanel.jsx at http://localhost:5173/admin
+├─ Fills form:
+│  ├─ Name: "John Doe"
+│  ├─ Roll Number: "2214094"
+│  ├─ Degree: "B.Tech"
+│  ├─ Branch: "IT"
+│  ├─ Graduation Year: "2026"
+│  └─ Certificate ID: "CERT-2025-ABC123"
+└─ Clicks "Submit"
+
+STEP 2: FRONTEND VALIDATION
+├─ Validates all fields present
+├─ Validates year between 1950 and 2031
+├─ Displays inline error if validation fails
+└─ If valid, proceeds to API call
+
+STEP 3: API REQUEST
+├─ Frontend sends: POST http://localhost:5000/api/admin/add
+├─ Headers: { Authorization: "Bearer <jwt_token>" }
+├─ Body:
+│  {
+│    "name": "John Doe",
+│    "rollNumber": "2214094",
+│    "degree": "B.Tech",
+│    "branch": "IT",
+│    "graduationYear": 2026,
+│    "certId": "CERT-2025-ABC123"
+│  }
+└─ Frontend shows loading state
+
+STEP 4: BACKEND PROCESSING (routes/admin.js)
+├─ Receives request
+├─ Middleware requireAuth verifies JWT
+│  ├─ Extracts token from Authorization header
+│  ├─ Verifies signature with JWT_SECRET
+│  └─ Attaches user info to request
+├─ Middleware requireRole checks admin role
+│  └─ Returns 403 if not admin
+├─ Validates all fields present
+│  └─ Returns 400 if missing
+└─ Calls hashUtils.generateDataHash(data)
+
+STEP 5: HASH GENERATION (utils/hashUtils.js)
+├─ Takes all 6 fields as parameters
+├─ Uses ethers.utils.solidityKeccak256()
+├─ Encoding: ['string', 'string', 'string', 'string', 'string', 'string']
+├─ Input: ['John Doe', '2214094', 'B.Tech', 'IT', '2026', 'CERT-2025-ABC123']
+└─ Output: 0x1234567890abcdef... (64 hex chars)
+
+STEP 6: BLOCKCHAIN TRANSACTION (blockchain/config.js)
+├─ Backend calls: contract.addAlumniRecord(certId, dataHash)
+├─ Smart contract executes:
+│  ├─ Checks msg.sender is authorized issuer
+│  ├─ Checks certId doesn't already exist
+│  ├─ Creates AlumniRecord struct:
+│  │  ├─ certId: "CERT-2025-ABC123"
+│  │  ├─ dataHash: 0x...
+│  │  ├─ issuer: 0xAdminAddress
+│  │  ├─ timestamp: 1704067200
+│  │  ├─ blockNumber: 43982156
+│  │  ├─ exists: true
+│  │  └─ issuerName: "XYZ University"
+│  ├─ Stores in records mapping
+│  ├─ Pushes certId to certificateIds array
+│  ├─ Increments totalRecords
+│  └─ Emits AlumniRecordAdded event
+├─ Transaction sent to Polygon network
+├─ Miners include in block
+├─ Block mined (usually 2-5 seconds)
+└─ Backend calls tx.wait() to get receipt
+
+STEP 7: RECEIPT PROCESSING (routes/admin.js)
+├─ Receives transaction receipt:
+│  ├─ transactionHash: "0x1234567890..."
+│  ├─ blockNumber: 43982156
+│  ├─ status: 1 (success)
+│  └─ gasUsed: 145000
+├─ Fetches block data: provider.getBlock(blockHash)
+├─ Extracts block timestamp: 1704067200
+├─ Formats response:
+│  {
+│    "certId": "CERT-2025-ABC123",
+│    "transactionHash": "0x1234567890...",
+│    "blockNumber": 43982156,
+│    "timestamp": "2025-02-05T12:34:56.000Z"
+│  }
+└─ Sends 201 Created response
+
+STEP 8: FRONTEND SUCCESS
+├─ Receives response
+├─ Shows success screen with:
+│  ├─ Green checkmark animation
+│  ├─ Transaction hash (clickable link to Polygonscan)
+│  ├─ Block number
+│  ├─ QR code (encodes verification URL)
+│  └─ Certificate ID
+├─ Auto-resets form after 5 seconds
+└─ User can add another record
 ```
 
-**Backend Integration** (To be implemented):
+### Example 2: Verifying Alumni Record
+
 ```
-Frontend Components
-  ↓ (HTTP/REST)
-Backend API (Node.js/Express)
-  ↓ (Web3/Ethers.js)
-AlumniVerification.sol (Smart Contract)
-  ↓
-Polygon Blockchain
+STEP 1: VERIFICATION REQUEST
+├─ StudentDashboard gets certId from URL params
+├─ Or external user scans QR code
+└─ Sends: GET http://localhost:5000/api/verify/CERT-2025-ABC123
+
+STEP 2: BACKEND QUERY (routes/verify.js)
+├─ No authentication required (public endpoint)
+├─ Calls: contract.getRecord(certId)
+├─ Smart contract:
+│  ├─ Looks up record in mapping
+│  ├─ Returns stored AlumniRecord
+│  └─ Returns empty if not found
+└─ Formats response
+
+STEP 3: FRONTEND DISPLAY (StudentDashboard.jsx)
+├─ Shows certificate details:
+│  ├─ Name, Roll Number, Degree, Branch
+│  ├─ Graduation Year, Certificate ID
+│  └─ Issue Date, Issuer Name
+├─ Shows blockchain info:
+│  ├─ Transaction hash (link to Polygonscan)
+│  ├─ Block number
+│  └─ Network (Polygon Mumbai)
+├─ Shows security badges:
+│  ├─ ✅ Tamper-Proof
+│  ├─ ✅ Immutable
+│  └─ ✅ Decentralized
+└─ Shows QR code for scanning
+
+STEP 4: OPTIONAL FULL VERIFICATION
+├─ User provides complete alumni data
+├─ Sends: POST http://localhost:5000/api/verify/check
+├─ Backend:
+│  ├─ Gets record from blockchain
+│  ├─ Generates hash from provided data
+│  ├─ Compares: provided_hash == on_chain_hash
+│  └─ Returns valid=true/false
+└─ Frontend shows verification result
+```
+
+### Example 3: Authentication Flow
+
+```
+STEP 1: USER CLICKS LOGIN
+├─ Opens HomePage.jsx
+├─ Clicks "Login with Gmail" button
+└─ Google OAuth pop-up opens
+
+STEP 2: GOOGLE AUTHENTICATION
+├─ User logs into Google account
+├─ Google generates ID token (JWT)
+├─ Frontend receives credential
+└─ Token contains: email, name, picture, aud, iss, etc.
+
+STEP 3: BACKEND VERIFICATION (routes/auth.js)
+├─ Frontend sends: POST http://localhost:5000/api/auth/google
+├─ Body: { credential: "<google_id_token>", userType: "admin" }
+├─ Backend uses google-auth-library:
+│  ├─ Verifies token signature
+│  ├─ Checks client ID matches GOOGLE_CLIENT_ID
+│  ├─ Checks token not expired
+│  └─ Extracts email: "admin@example.com"
+├─ Checks authorization:
+│  ├─ If userType="admin":
+│  │  ├─ Check: email in ADMIN_EMAILS? OR
+│  │  ├─ Check: domain matches ADMIN_EMAIL_DOMAIN?
+│  │  └─ If no → return 401 "Not authorized"
+│  └─ If userType="student" → allow
+├─ Generates JWT token (auth/jwt.js):
+│  ├─ Payload:
+│  │  {
+│  │    "email": "admin@example.com",
+│  │    "name": "Admin User",
+│  │    "role": "admin"
+│  │  }
+│  ├─ Secret: JWT_SECRET from config
+│  └─ Expires: 7 days
+└─ Returns response:
+   {
+     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+     "user": { "email": "admin@example.com", "name": "Admin User", "role": "admin" }
+   }
+
+STEP 4: FRONTEND STORAGE
+├─ Receives JWT token
+├─ Stores in localStorage: localStorage.setItem('token', jwtToken)
+├─ Stores in localStorage: localStorage.setItem('userRole', 'admin')
+└─ Redirects to /admin
+
+STEP 5: AUTHENTICATED REQUESTS
+├─ All subsequent requests include JWT:
+│  ├─ Headers: { Authorization: "Bearer <jwt_token>" }
+│  └─ Example: POST /api/admin/add (AdminPanel form)
+├─ Backend middleware (middleware/auth.js):
+│  ├─ Extracts token from Authorization header
+│  ├─ Calls jwt.verifySessionToken(token)
+│  ├─ If valid: attaches user to request → continue
+│  └─ If invalid/expired: return 401
+└─ Request proceeds to route handler
+
+STEP 6: TOKEN EXPIRATION (After 7 days)
+├─ User makes request with expired token
+├─ Backend returns 401 Unauthorized
+├─ Frontend catches 401 error
+├─ Frontend clears localStorage
+└─ Frontend redirects to HomePage (login page)
 ```
 
 ---
 
-## 📊 TECHNOLOGY STACK SUMMARY
+## 🔑 Key Integration Points
 
-### Frontend:
-- **React 19** - UI framework
-- **Vite** - Build tool
-- **React Router** - Navigation
-- **Axios** - HTTP client
-- **Lucide React** - Icons
-- **qrcode.react** - QR codes
+### Critical Code Replacements
 
-### Blockchain:
-- **Solidity 0.8.20** - Smart contract language
-- **Foundry** - Development framework
-- **Polygon** - Blockchain network
+**1. AdminPanel.jsx (Line 86-112) - Replace Mock with Real API**
+```javascript
+// OLD (Mock):
+const result = {
+  certId: formData.certId,
+  transactionHash: `0x${Math.random().toString(16).substr(2)}...`,
+  blockNumber: Math.floor(Math.random() * 900000) + 1000000,
+  timestamp: new Date().toISOString(),
+};
 
-### Styling:
-- **CSS3** - Custom styles
-- **CSS Variables** - Theme management
-- **Responsive Design** - Mobile-first
+// NEW (Real):
+const token = localStorage.getItem('token');
+const response = await axios.post(
+  'http://localhost:5000/api/admin/add',
+  {
+    name: formData.name,
+    rollNumber: formData.rollNumber,
+    degree: formData.degree,
+    branch: formData.branch,
+    graduationYear: parseInt(formData.graduationYear),
+    certId: formData.certId,
+  },
+  {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    }
+  }
+);
+const result = response.data;
+```
+
+**2. StudentDashboard.jsx (Line 11-24) - Replace Mock Data with Real API**
+```javascript
+// OLD (Mock):
+const [studentData] = useState({
+  name: 'Saurabh Singh',
+  rollNumber: '2214094',
+  // ... more mock fields
+});
+
+// NEW (Real):
+const [studentData, setStudentData] = useState(null);
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const fetchStudentData = async () => {
+    try {
+      const certId = new URLSearchParams(window.location.search).get('certId');
+      const response = await axios.get(
+        `http://localhost:5000/api/verify/${certId}`
+      );
+      setStudentData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch:', error);
+      // Show error UI
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchStudentData();
+}, []);
+
+if (loading) return <div>Loading...</div>;
+if (!studentData) return <div>Record not found</div>;
+```
 
 ---
 
-## 🚀 DEPLOYMENT CHECKLIST
+## 🧪 Testing
 
-### Frontend:
-- [x] Components created
-- [x] Routing configured
-- [x] Styling complete
-- [ ] Backend API integration
-- [ ] Environment variables
-- [ ] Production build
+### Run Blockchain Tests
+```bash
+cd BlockChain
+forge test                           # Run all tests
+forge test -vv                       # Verbose output
+forge test --match-test testName     # Run specific test
+forge coverage                       # Check coverage
+```
 
-### Blockchain:
-- [x] Smart contract written
-- [x] Tests passing
-- [x] Deployment script ready
-- [ ] Deployed to Polygon Mumbai
-- [ ] Contract verified on Polygonscan
-- [ ] Contract address saved
-
-### Backend:
-- [ ] Server setup
-- [ ] API routes implemented
-- [ ] Blockchain integration
-- [ ] Error handling
-- [ ] Authentication
+### Test Coverage
+Current test suite covers:
+- ✅ Add alumni record
+- ✅ Get record
+- ✅ Verify record
+- ✅ Access control (onlyAuthorizedIssuer)
+- ✅ Duplicate prevention
+- ✅ Event emissions
 
 ---
 
-## 📝 NOTES
+## 📊 Deployment Checklist
 
-1. **Current State**: Frontend uses mock data, ready for backend integration
-2. **Smart Contract**: Fully tested and ready for deployment
-3. **Authentication**: Placeholder for Google OAuth
-4. **Backend**: Not yet implemented (see BACKEND_INTEGRATION.md)
-5. **Production**: Requires backend and deployed contract
+### Pre-Deployment
+- [ ] Smart contract tested locally
+- [ ] Contract compiled without errors (`forge build`)
+- [ ] Backend environment variables configured
+- [ ] Frontend environment variables set
+- [ ] Google OAuth credentials obtained
+- [ ] Admin email addresses configured
+
+### Deployment Steps
+- [ ] Deploy smart contract to Mumbai: `forge script DeployAlumniVerification.s.sol --rpc-url <RPC> --broadcast`
+- [ ] Save contract address
+- [ ] Update backend `config.local.json` with contract address
+- [ ] Authorize admin issuers on contract
+- [ ] Start backend: `npm run dev`
+- [ ] Start frontend: `npm run dev`
+- [ ] Test add record flow
+- [ ] Test verify record flow
+- [ ] Test authentication
+
+### Post-Deployment
+- [ ] Verify contract on Polygonscan
+- [ ] Test QR code scanning
+- [ ] Monitor for errors in logs
+- [ ] Setup error tracking (Sentry, etc.)
 
 ---
 
-## 🎓 LEARNING RESOURCES
+## 📚 Important Files Summary
 
-- **React**: https://react.dev/
-- **Foundry**: https://book.getfoundry.sh/
-- **Polygon**: https://docs.polygon.technology/
-- **Solidity**: https://docs.soliditylang.org/
+| File | Type | Purpose | Status |
+|------|------|---------|--------|
+| AlumniVerification.sol | Smart Contract | Core blockchain logic | ✅ Complete |
+| AdminPanel.jsx | Component | Add records form | ⚠️ Mock API |
+| StudentDashboard.jsx | Component | View credentials | ⚠️ Mock data |
+| routes/admin.js | Backend | Add record API | ✅ Complete |
+| routes/verify.js | Backend | Verify record API | ✅ Complete |
+| routes/auth.js | Backend | Google OAuth | ✅ Complete |
+| blockchain/config.js | Backend | Web3 setup | ✅ Complete |
+| utils/hashUtils.js | Backend | Hash generation | ✅ Complete |
+| middleware/auth.js | Backend | JWT auth | ✅ Complete |
 
 ---
 
-**Built with ❤️ for Blockchain-Based Alumni Verification**
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**1. "Contract artifact not found" Error**
+```
+Solution: Run 'forge build' in BlockChain folder
+```
+
+**2. "Private key invalid" Error**
+```
+Solution: Check PRIVATE_KEY format (0x... or plain hex)
+Make sure key is from authorized issuer account
+```
+
+**3. "Connection refused" Error**
+```
+Solution: Check backend is running on port 5000
+Check RPC_URL is correct and accessible
+```
+
+**4. "Invalid JWT Token" Error**
+```
+Solution: Token may be expired (7 days)
+Try logging in again
+Clear localStorage and refresh
+```
+
+**5. "Certificate ID already exists" Error**
+```
+Solution: Certificate ID must be unique
+Use different certificate ID
+```
+
+---
+
+## ✅ Next Steps
+
+1. **Deploy Smart Contract**: Use forge script to deploy to Mumbai
+2. **Setup Backend Config**: Add deployed contract address to config.local.json
+3. **Start Services**: Run backend and frontend
+4. **Integrate Frontend APIs**: Replace mock data in AdminPanel and StudentDashboard
+5. **Setup Google OAuth**: Configure GOOGLE_CLIENT_ID in backend
+6. **Test End-to-End**: Add record → Verify → Check on Polygonscan
+7. **Monitor Logs**: Watch for errors and optimize
+8. **Production Deployment**: Deploy to mainnet when ready
+
+---
+
+## 📞 Support & Resources
+
+- **Solidity Docs**: https://docs.soliditylang.org/
+- **Foundry Docs**: https://book.getfoundry.sh/
+- **Polygon Docs**: https://docs.polygon.technology/
+- **Ethers.js Docs**: https://docs.ethers.org/v5/
+- **React Docs**: https://react.dev/
+
+---
+
+**Built with ❤️ for blockchain-based alumni verification. Tamper-proof. Instant. Trustless.**
 
 
