@@ -1,51 +1,61 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { GoogleLogin } from '@react-oauth/google';
-import { Shield, Users, GraduationCap, Mail, ArrowRight, CheckCircle, Lock, Sparkles } from 'lucide-react';
-import { isAuthenticated, setSession } from '../auth/session';
-import './HomePage.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { GoogleLogin } from "@react-oauth/google";
+import {
+  Shield,
+  Users,
+  GraduationCap,
+  Mail,
+  ArrowRight,
+  CheckCircle,
+  Lock,
+  Sparkles,
+} from "lucide-react";
+import { isAuthenticated, setSession } from "../auth/session";
+import "./HomePage.css";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [hoveredCard, setHoveredCard] = useState(null);
   const [oauthOpen, setOauthOpen] = useState(false);
   const [oauthUserType, setOauthUserType] = useState(null); // 'admin' | 'student'
-  const [oauthError, setOauthError] = useState('');
+  const [oauthError, setOauthError] = useState("");
 
   const handleAdminLogin = () => {
-    // Auth is required (route is protected)
-    if (!isAuthenticated()) {
-      handleGmailLogin('admin');
-      return;
-    }
-    navigate('/admin');
+    // ❌ GMAIL AUTH COMMENTED OUT - Bypassing for development
+    // if (!isAuthenticated()) {
+    //   handleGmailLogin('admin');
+    //   return;
+    // }
+    navigate("/admin");
   };
 
   const handleStudentLogin = () => {
-    // Auth is required (route is protected)
-    if (!isAuthenticated()) {
-      handleGmailLogin('student');
-      return;
-    }
-    navigate('/student/dashboard');
+    // ❌ GMAIL AUTH COMMENTED OUT - Bypassing for development
+    // if (!isAuthenticated()) {
+    //   handleGmailLogin('student');
+    //   return;
+    // }
+    navigate("/student/dashboard");
   };
 
   const handleGmailLogin = (userType) => {
-    setOauthError('');
+    setOauthError("");
     setOauthUserType(userType);
     setOauthOpen(true);
   };
 
   const handleOAuthSuccess = async (credentialResponse) => {
     try {
-      setOauthError('');
+      setOauthError("");
 
       const credential = credentialResponse?.credential;
       if (!credential) {
-        setOauthError('Google login failed: missing credential.');
+        setOauthError("Google login failed: missing credential.");
         return;
       }
 
@@ -57,16 +67,16 @@ const HomePage = () => {
       setSession({ token: resp.data.token, user: resp.data.user });
       setOauthOpen(false);
 
-      if (resp.data.user.role === 'admin') {
-        navigate('/admin');
+      if (resp.data.user.role === "admin") {
+        navigate("/admin");
       } else {
-        navigate('/student/dashboard');
+        navigate("/student/dashboard");
       }
     } catch (err) {
       setOauthError(
         err.response?.data?.error ||
           err.response?.data?.details ||
-          'Google login failed. Please try again.'
+          "Google login failed. Please try again.",
       );
     }
   };
@@ -94,11 +104,15 @@ const HomePage = () => {
             {oauthError && <div className="oauth-error">{oauthError}</div>}
 
             <div className="oauth-google-btn">
-              <GoogleLogin onSuccess={handleOAuthSuccess} onError={() => setOauthError('Google login failed.')} />
+              <GoogleLogin
+                onSuccess={handleOAuthSuccess}
+                onError={() => setOauthError("Google login failed.")}
+              />
             </div>
 
             <p className="oauth-hint">
-              If you don’t see the button, set <code>VITE_GOOGLE_CLIENT_ID</code> in your frontend env.
+              If you don’t see the button, set{" "}
+              <code>VITE_GOOGLE_CLIENT_ID</code> in your frontend env.
             </p>
           </div>
         </div>
@@ -110,7 +124,9 @@ const HomePage = () => {
             <Shield className="logo-icon-home" size={40} />
             <div>
               <h1 className="brand-title">Alumni Verification Portal</h1>
-              <p className="brand-subtitle">Blockchain-Based Credential Management</p>
+              <p className="brand-subtitle">
+                Blockchain-Based Credential Management
+              </p>
             </div>
           </div>
           <div className="blockchain-badge-home">
@@ -132,8 +148,9 @@ const HomePage = () => {
             <span className="gradient-text"> Blockchain Technology</span>
           </h2>
           <p className="hero-description">
-            A revolutionary system that ensures tamper-proof, instant verification of educational credentials
-            using blockchain technology. Join thousands of verified alumni worldwide.
+            A revolutionary system that ensures tamper-proof, instant
+            verification of educational credentials using blockchain technology.
+            Join thousands of verified alumni worldwide.
           </p>
 
           {/* Features Grid */}
@@ -158,14 +175,16 @@ const HomePage = () => {
       <section className="login-section">
         <div className="section-header-home">
           <h3 className="section-title-home">Choose Your Portal</h3>
-          <p className="section-subtitle-home">Select your role to access the platform</p>
+          <p className="section-subtitle-home">
+            Select your role to access the platform
+          </p>
         </div>
 
         <div className="login-cards-grid">
           {/* Admin Card */}
-          <div 
-            className={`login-card admin-card ${hoveredCard === 'admin' ? 'hovered' : ''}`}
-            onMouseEnter={() => setHoveredCard('admin')}
+          <div
+            className={`login-card admin-card ${hoveredCard === "admin" ? "hovered" : ""}`}
+            onMouseEnter={() => setHoveredCard("admin")}
             onMouseLeave={() => setHoveredCard(null)}
           >
             <div className="card-glow admin-glow"></div>
@@ -175,9 +194,10 @@ const HomePage = () => {
               </div>
               <h4 className="card-title">Admin Portal</h4>
               <p className="card-description">
-                Add and manage alumni records. Upload verified credentials to the blockchain.
+                Add and manage alumni records. Upload verified credentials to
+                the blockchain.
               </p>
-              
+
               <div className="card-features">
                 <div className="card-feature-item">
                   <CheckCircle size={16} />
@@ -193,18 +213,19 @@ const HomePage = () => {
                 </div>
               </div>
 
-              <button 
+              {/* ❌ GMAIL LOGIN COMMENTED OUT - Using direct navigation */}
+              <button
                 className="login-btn admin-btn"
-                onClick={() => handleGmailLogin('admin')}
+                onClick={() => handleAdminLogin()}
               >
                 <Mail size={20} />
                 <span>Login with Gmail</span>
                 <ArrowRight size={20} className="arrow-icon" />
               </button>
 
-              <button 
+              <button
                 className="direct-login-btn"
-                onClick={() => handleGmailLogin('admin')}
+                onClick={() => handleAdminLogin()}
               >
                 Login to continue
               </button>
@@ -212,9 +233,9 @@ const HomePage = () => {
           </div>
 
           {/* Student Card */}
-          <div 
-            className={`login-card student-card ${hoveredCard === 'student' ? 'hovered' : ''}`}
-            onMouseEnter={() => setHoveredCard('student')}
+          <div
+            className={`login-card student-card ${hoveredCard === "student" ? "hovered" : ""}`}
+            onMouseEnter={() => setHoveredCard("student")}
             onMouseLeave={() => setHoveredCard(null)}
           >
             <div className="card-glow student-glow"></div>
@@ -224,9 +245,10 @@ const HomePage = () => {
               </div>
               <h4 className="card-title">Student Portal</h4>
               <p className="card-description">
-                View your verified credentials. Download certificates and share verification links.
+                View your verified credentials. Download certificates and share
+                verification links.
               </p>
-              
+
               <div className="card-features">
                 <div className="card-feature-item">
                   <CheckCircle size={16} />
@@ -242,18 +264,19 @@ const HomePage = () => {
                 </div>
               </div>
 
-              <button 
+              {/* ❌ GMAIL LOGIN COMMENTED OUT - Using direct navigation */}
+              <button
                 className="login-btn student-btn"
-                onClick={() => handleGmailLogin('student')}
+                onClick={() => handleStudentLogin()}
               >
                 <Mail size={20} />
                 <span>Login with Gmail</span>
                 <ArrowRight size={20} className="arrow-icon" />
               </button>
 
-              <button 
+              <button
                 className="direct-login-btn"
-                onClick={() => handleGmailLogin('student')}
+                onClick={() => handleStudentLogin()}
               >
                 Login to continue
               </button>
@@ -283,7 +306,9 @@ const HomePage = () => {
 
       {/* Footer */}
       <footer className="home-footer">
-        <p>© 2025 Alumni Verification Portal. Powered by Blockchain Technology.</p>
+        <p>
+          © 2025 Alumni Verification Portal. Powered by Blockchain Technology.
+        </p>
       </footer>
     </div>
   );

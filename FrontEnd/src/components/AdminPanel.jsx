@@ -9,12 +9,17 @@ import {
   AlertCircle,
   Loader2,
   QrCode,
+  Wallet,
+  Copy,
+  Check,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { ethers } from "ethers";
 import "./AdminPanel.css";
 import { clearSession, getAuthHeader, getUser } from "../auth/session";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const API_BASE_URL =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -27,6 +32,13 @@ const AdminPanel = () => {
     certId: "",
   });
 
+  // MetaMask State
+  const [walletAddress, setWalletAddress] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [walletError, setWalletError] = useState("");
+  const [showCopied, setShowCopied] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
@@ -35,6 +47,85 @@ const AdminPanel = () => {
   const [stats, setStats] = useState({ totalRecords: null, network: null });
 
   const user = getUser();
+
+  // ✅ Check if MetaMask is already connected on mount
+  useEffect(() => {
+    const checkMetaMaskConnection = async () => {
+      try {
+        if (typeof window.ethereum !== "undefined") {
+          const accounts = await window.ethereum.request({
+            method: "eth_accounts",
+          });
+          if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+            setIsConnected(true);
+          }
+        }
+      } catch (err) {
+        console.error("Error checking MetaMask connection:", err);
+      }
+    };
+
+    checkMetaMaskConnection();
+
+    // Listen for account changes
+    if (typeof window.ethereum !== "undefined") {
+      window.ethereum.on("accountsChanged", (accounts) => {
+        if (accounts.length > 0) {
+          setWalletAddress(accounts[0]);
+          setIsConnected(true);
+        } else {
+          setWalletAddress("");
+          setIsConnected(false);
+        }
+      });
+    }
+  }, []);
+
+  // ✅ Connect MetaMask Wallet
+  const connectMetaMask = async () => {
+    if (typeof window.ethereum === "undefined") {
+      setWalletError("MetaMask is not installed. Please install it first.");
+      return;
+    }
+
+    setIsConnecting(true);
+    setWalletError("");
+
+    try {
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+
+      if (accounts.length > 0) {
+        setWalletAddress(accounts[0]);
+        setIsConnected(true);
+        setWalletError("");
+      }
+    } catch (error) {
+      if (error.code === 4001) {
+        setWalletError("Connection rejected. Please try again.");
+      } else {
+        setWalletError("Failed to connect MetaMask wallet.");
+      }
+      console.error("MetaMask connection error:", error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  // ✅ Copy wallet address to clipboard
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(walletAddress);
+    setShowCopied(true);
+    setTimeout(() => setShowCopied(false), 2000);
+  };
+
+  // ✅ Format wallet address for display
+  const formatAddress = (address) => {
+    if (!address) return "";
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   useEffect(() => {
     const loadStats = async () => {
@@ -107,28 +198,98 @@ const AdminPanel = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isConnected || !walletAddress) {
+      setWalletError("Please connect your MetaMask wallet first");
+      return;
+    }
+
     if (!validateForm()) return;
 
     setLoading(true);
     setApiError("");
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/admin/add`, formData, {
-        headers: {
-          ...getAuthHeader(),
-        },
-      });
-      const data = response.data;
+      // ✅ Step 1: Generate data hash on frontend (matching Solidity's generateDataHash)
+      // Using ethers v6 API: ethers.solidityPackedKeccak256 (renamed from solidityKeccak256)
+      const dataHash = ethers.solidityPackedKeccak256(
+        ["string", "string", "string", "string", "string", "string"],
+        [
+          formData.name,
+          formData.rollNumber,
+          formData.degree,
+          formData.branch,
+          String(formData.graduationYear),
+          formData.certId,
+        ],
+      );
 
+      console.log("📝 Data Hash:", dataHash);
+
+      // ✅ Step 2: Get contract address from environment
+      const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+      if (!contractAddress) {
+        throw new Error(
+          "Contract address not configured. Set VITE_CONTRACT_ADDRESS in .env",
+        );
+      }
+
+      // ✅ Step 3: Minimal ABI for addAlumniRecord function
+      const contractABI = [
+        {
+          inputs: [
+            { internalType: "string", name: "_certId", type: "string" },
+            { internalType: "bytes32", name: "_dataHash", type: "bytes32" },
+          ],
+          name: "addAlumniRecord",
+          outputs: [
+            { internalType: "bool", name: "success", type: "bool" },
+            { internalType: "uint256", name: "timestamp", type: "uint256" },
+            { internalType: "uint256", name: "blockNumber", type: "uint256" },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ];
+
+      // ✅ Step 4: Get ethers provider from MetaMask and create signer
+      // Using ethers v6 API: BrowserProvider (replaces Web3Provider in v6)
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      // ✅ Step 5: Create contract instance connected to signer
+      const contract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer,
+      );
+
+      console.log("🔗 Contract Address:", contractAddress);
+      console.log("👤 Signer Address:", walletAddress);
+
+      // ✅ Step 6: Call smart contract function
+      setApiError(""); // Clear any previous errors
+      const tx = await contract.addAlumniRecord(formData.certId, dataHash);
+
+      console.log("⏳ Transaction submitted:", tx.hash);
+      setApiError(`⏳ Transaction submitted! Hash: ${tx.hash}`);
+
+      // ✅ Step 7: Wait for transaction confirmation
+      const receipt = await tx.wait();
+
+      console.log("✅ Transaction confirmed:", receipt);
+
+      // ✅ Step 8: Build result data
       const finalResult = {
-        transactionHash: data.transactionHash,
-        certId: data.certId,
-        timestamp: data.timestamp,
-        blockNumber: data.blockNumber,
+        transactionHash: receipt.transactionHash,
+        certId: formData.certId,
+        blockNumber: receipt.blockNumber,
+        timestamp: new Date().toISOString(),
+        walletAddress: walletAddress,
       };
 
       setResult(finalResult);
       setSubmitted(true);
+      setApiError(""); // Clear loading message
 
       // Reset form after 5 seconds
       setTimeout(() => {
@@ -144,11 +305,20 @@ const AdminPanel = () => {
         });
       }, 5000);
     } catch (error) {
-      const message =
-        error.response?.data?.error ||
-        error.response?.data?.details ||
-        "Failed to submit alumni record. Please try again.";
-      setApiError(message);
+      console.error("❌ Error:", error);
+
+      // Handle specific MetaMask errors
+      if (error.code === 4001) {
+        setApiError("Transaction rejected by user");
+      } else if (error.code === "INSUFFICIENT_FUNDS") {
+        setApiError("Insufficient balance to pay gas fees");
+      } else if (error.reason) {
+        setApiError(`Error: ${error.reason}`);
+      } else if (error.message.includes("not an authorized issuer")) {
+        setApiError("Your wallet is not authorized as an issuer");
+      } else {
+        setApiError(error.message || "Failed to submit to blockchain");
+      }
     } finally {
       setLoading(false);
     }
@@ -185,9 +355,45 @@ const AdminPanel = () => {
           </div>
           <div className="blockchain-badge">
             <div className="pulse-dot"></div>
-            <span>{stats.network?.name ? `${stats.network.name}` : "Polygon Mumbai"}</span>
+            <span>
+              {stats.network?.name ? `${stats.network.name}` : "Polygon Mumbai"}
+            </span>
           </div>
           <div className="admin-user-actions">
+            {!isConnected ? (
+              <button
+                className="metamask-connect-btn"
+                onClick={connectMetaMask}
+                disabled={isConnecting}
+              >
+                <Wallet size={18} />
+                <span>
+                  {isConnecting ? "Connecting..." : "Connect MetaMask"}
+                </span>
+              </button>
+            ) : (
+              <div className="wallet-connected">
+                <div className="wallet-info">
+                  <div className="wallet-status">
+                    <div className="wallet-dot"></div>
+                    <span className="wallet-label">Connected</span>
+                  </div>
+                  <button
+                    className="wallet-address-btn"
+                    onClick={copyToClipboard}
+                    title={walletAddress}
+                  >
+                    <Wallet size={16} />
+                    {formatAddress(walletAddress)}
+                    {showCopied ? (
+                      <Check size={14} className="copy-icon" />
+                    ) : (
+                      <Copy size={14} className="copy-icon" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
             <span className="admin-user-email">{user?.email || "Admin"}</span>
             <button className="admin-logout-btn" onClick={handleLogout}>
               Logout
@@ -205,7 +411,9 @@ const AdminPanel = () => {
             </div>
             <div className="stat-content">
               <h3 className="stat-value">
-                {typeof stats.totalRecords === "number" ? stats.totalRecords : "—"}
+                {typeof stats.totalRecords === "number"
+                  ? stats.totalRecords
+                  : "—"}
               </h3>
               <p className="stat-label">Alumni Verified</p>
             </div>
@@ -249,6 +457,20 @@ const AdminPanel = () => {
             <div className="api-error-banner">
               <AlertCircle size={18} className="api-error-icon" />
               <span>{apiError}</span>
+            </div>
+          )}
+
+          {walletError && (
+            <div className="wallet-error-banner">
+              <AlertCircle size={18} className="wallet-error-icon" />
+              <span>{walletError}</span>
+            </div>
+          )}
+
+          {!isConnected && (
+            <div className="wallet-warning-banner">
+              <Wallet size={18} className="wallet-warning-icon" />
+              <span>Please connect your MetaMask wallet to submit records</span>
             </div>
           )}
 
@@ -391,7 +613,14 @@ const AdminPanel = () => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" disabled={loading} className="submit-btn">
+                <button
+                  type="submit"
+                  disabled={loading || !isConnected}
+                  className="submit-btn"
+                  title={
+                    !isConnected ? "Please connect MetaMask wallet first" : ""
+                  }
+                >
                   {loading ? (
                     <>
                       <Loader2 className="spinner" size={20} />
@@ -417,6 +646,13 @@ const AdminPanel = () => {
               </p>
 
               <div className="result-grid">
+                <div className="result-card">
+                  <h3 className="result-label">Submitted By (Wallet)</h3>
+                  <code className="result-value">
+                    {result?.walletAddress || walletAddress}
+                  </code>
+                </div>
+
                 <div className="result-card">
                   <h3 className="result-label">Transaction Hash</h3>
                   <code className="result-value hash-value">
