@@ -307,7 +307,6 @@ const AdminPanel = () => {
     } catch (error) {
       console.error("❌ Error:", error);
 
-      // Handle specific MetaMask errors
       if (error.code === 4001) {
         setApiError("Transaction rejected by user");
       } else if (error.code === "INSUFFICIENT_FUNDS") {
