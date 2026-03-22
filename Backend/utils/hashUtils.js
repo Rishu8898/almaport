@@ -1,10 +1,8 @@
-const { ethers } = require('ethers');
+const { ethers } = require("ethers");
 
 /**
- * Generate data hash exactly like AlumniVerification.generateDataHash in Solidity
- *
- * Solidity:
- * keccak256(abi.encodePacked(name, rollNumber, degree, branch, graduationYear, certId));
+ * Generate data hash based only on personal data (no Certificate ID)
+ * Hash depends on: name, rollNumber, degree, branch, graduationYear
  *
  * @param {Object} data
  * @param {string} data.name
@@ -12,24 +10,32 @@ const { ethers } = require('ethers');
  * @param {string} data.degree
  * @param {string} data.branch
  * @param {string|number} data.graduationYear
- * @param {string} data.certId
  * @returns {string} keccak256 hash (0x...)
  */
-function generateDataHash({ name, rollNumber, degree, branch, graduationYear, certId }) {
-  if (!name || !rollNumber || !degree || !branch || !graduationYear || !certId) {
-    throw new Error('Missing required fields for hash generation');
+function generateDataHash({
+  name,
+  rollNumber,
+  degree,
+  branch,
+  graduationYear,
+}) {
+  if (!name || !rollNumber || !degree || !branch || !graduationYear) {
+    throw new Error("Missing required fields for hash generation");
   }
 
-  const yearAsString = String(graduationYear);
+  // Normalize: trim whitespace and lowercase text fields for case-insensitive matching
+  const normName = name.trim().toLowerCase();
+  const normRoll = rollNumber.trim().toLowerCase();
+  const normDegree = degree.trim().toLowerCase();
+  const normBranch = branch.trim().toLowerCase();
+  const yearAsString = String(graduationYear).trim();
 
   return ethers.utils.solidityKeccak256(
-    ['string', 'string', 'string', 'string', 'string', 'string'],
-    [name, rollNumber, degree, branch, yearAsString, certId]
+    ["string", "string", "string", "string", "string"],
+    [normName, normRoll, normDegree, normBranch, yearAsString],
   );
 }
 
 module.exports = {
   generateDataHash,
 };
-
-

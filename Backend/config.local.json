@@ -1,11 +1,9 @@
 {
-  "RPC_URL": "https://rpc-mumbai.maticvigil.com",
-  "CONTRACT_ADDRESS": "0xYourDeployedContractAddressHere",
-  "PRIVATE_KEY": "your_private_key_without_0x_prefix",
+  "RPC_URL": "https://rpc-amoy.polygon.technology",
+  "CONTRACT_ADDRESS": "0x412d89AE7DEeFf4dcC96D229Edb34b57A83B5982",
+  "PRIVATE_KEY": "25e166b3491519b562dd593bffe1e32ae6491b885859e2931434b64e3f721642",
   "GOOGLE_CLIENT_ID": "your_google_oauth_client_id.apps.googleusercontent.com",
   "JWT_SECRET": "p8T3fW9J2ZxM4R6yE7qDkBvS5HcNnAUmYgLwXK0a1oOeI",
   "ADMIN_EMAILS": "premsuman0509@gmail.com,admin2@example.com",
   "ADMIN_EMAIL_DOMAIN": ""
 }
-
-
