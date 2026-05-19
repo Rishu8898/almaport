@@ -1,92 +1,187 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
-import { GraduationCap, Download, Share2, Shield, FileText, QrCode, ArrowLeft, CheckCircle, User } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import './StudentDashboard.css';
-import { clearSession } from '../auth/session';
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
+import { ethers } from "ethers";
+import {
+  GraduationCap,
+  Download,
+  Share2,
+  Shield,
+  FileText,
+  QrCode,
+  ArrowLeft,
+  CheckCircle,
+  User,
+  Search,
+  XCircle,
+} from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import "./StudentDashboard.css";
+import { clearSession } from "../auth/session";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  const [certIdInput, setCertIdInput] = useState(
+    searchParams.get("certId") || "",
+  );
   const [studentData, setStudentData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [showQR, setShowQR] = useState(false);
 
-  // Default certId can be overridden via query param: ?certId=...
-  const certIdFromQuery = searchParams.get('certId');
-  const defaultCertId = certIdFromQuery || 'CERT-2025-IVL8XHG4T';
+  // Verification form state
+  const [verifyMode, setVerifyMode] = useState(false);
+  const [verifyForm, setVerifyForm] = useState({
+    name: "",
+    rollNumber: "",
+    degree: "",
+    branch: "",
+    graduationYear: "",
+    certId: "",
+  });
+  const [verifyResult, setVerifyResult] = useState(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
+  // Auto-search if certId is in URL
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError('');
+    const certId = searchParams.get("certId");
+    if (certId) {
+      setCertIdInput(certId);
+      fetchCertificate(certId);
+    }
+  }, []);
 
-        const response = await axios.get(`${API_BASE_URL}/api/verify/${defaultCertId}`);
-        const data = response.data;
+  const fetchCertificate = async (certId) => {
+    if (!certId || !certId.trim()) {
+      setError("Please enter a Certificate ID.");
+      return;
+    }
+    try {
+      setLoading(true);
+      setError("");
+      setStudentData(null);
+      setVerifyResult(null);
 
-        // Map backend response to dashboard-friendly structure.
-        const issueDate = new Date(
-          (data.timestamp || 0) * 1000
-        ).toISOString().slice(0, 10);
+      const response = await axios.get(
+        `${API_BASE_URL}/api/verify/${certId.trim()}`,
+      );
+      const data = response.data;
 
-        setStudentData({
-          // In a real app, these would come from your DB; for now keep demo values.
-          name: 'Demo Student',
-          rollNumber: 'N/A',
-          degree: 'N/A',
-          branch: 'N/A',
-          graduationYear: 'N/A',
-          email: 'demo@example.com',
+      const issueDate = new Date((data.timestamp || 0) * 1000)
+        .toISOString()
+        .slice(0, 10);
 
-          certId: data.certId,
-          issueDate,
-          transactionHash: 'On-chain record (view on explorer)',
-          blockNumber: data.blockNumber,
-          status: data.exists ? 'Verified' : 'Not Found',
-          issuer: data.issuerName || 'Unknown Issuer',
-        });
-      } catch (err) {
+      setStudentData({
+        certId: data.certId,
+        dataHash: data.dataHash,
+        issueDate,
+        blockNumber: data.blockNumber,
+        status: data.exists ? "Verified" : "Not Found",
+        issuer: data.issuerName || "Unknown Issuer",
+        issuerAddress: data.issuer,
+        timestamp: data.timestamp,
+      });
+
+      // Pre-fill certId in verify form
+      setVerifyForm((prev) => ({ ...prev, certId: data.certId }));
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setError(
+          "No record found for this Certificate ID. Please check and try again.",
+        );
+      } else {
         setError(
           err.response?.data?.error ||
             err.response?.data?.details ||
-            'Failed to load certificate data.'
+            "Failed to load certificate data.",
         );
-      } finally {
-        setLoading(false);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, [defaultCertId]);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchCertificate(certIdInput);
+  };
 
-  const handleDownload = () => {
-    // TODO: Generate and download PDF certificate
-    alert('Certificate download will be implemented with backend integration');
+  const handleVerifyData = async (e) => {
+    e.preventDefault();
+    const { name, rollNumber, degree, branch, graduationYear, certId } =
+      verifyForm;
+    if (
+      !name ||
+      !rollNumber ||
+      !degree ||
+      !branch ||
+      !graduationYear ||
+      !certId
+    ) {
+      setVerifyResult({ valid: false, message: "Please fill in all fields." });
+      return;
+    }
+
+    setVerifyLoading(true);
+    setVerifyResult(null);
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/verify/check`, {
+        certId,
+        name,
+        rollNumber,
+        degree,
+        branch,
+        graduationYear: Number(graduationYear),
+      });
+
+      if (response.data.valid) {
+        setVerifyResult({
+          valid: true,
+          message:
+            "Data verified successfully! The provided details match the blockchain record.",
+        });
+      } else {
+        setVerifyResult({
+          valid: false,
+          message:
+            "Verification failed. The details you entered do not match the on-chain record.",
+          computedHash: response.data.computedHash,
+          storedHash: response.data.storedHash,
+        });
+      }
+    } catch (err) {
+      setVerifyResult({
+        valid: false,
+        message: err.response?.data?.error || "Verification request failed.",
+      });
+    } finally {
+      setVerifyLoading(false);
+    }
   };
 
   const handleShare = () => {
-    const verificationUrl = `${window.location.origin}/verify/${studentData?.certId || ''}`;
+    const verificationUrl = `${window.location.origin}/verify/${studentData?.certId || ""}`;
     if (navigator.share) {
       navigator.share({
-        title: 'My Alumni Certificate',
-        text: 'Verify my educational credentials',
-        url: verificationUrl
+        title: "My Alumni Certificate",
+        text: "Verify my educational credentials",
+        url: verificationUrl,
       });
     } else {
       navigator.clipboard.writeText(verificationUrl);
-      alert('Verification link copied to clipboard!');
+      alert("Verification link copied to clipboard!");
     }
   };
 
   const handleLogout = () => {
     clearSession();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -102,17 +197,46 @@ const StudentDashboard = () => {
             <GraduationCap className="header-icon" size={32} />
             <div>
               <h1 className="dashboard-title">Student Dashboard</h1>
-              <p className="dashboard-subtitle">View Your Verified Credentials</p>
+              <p className="dashboard-subtitle">
+                Look Up &amp; Verify Your Credentials
+              </p>
             </div>
           </div>
           <div className="user-info-badge">
             <User size={18} />
-            <span>{studentData?.name || 'Student'}</span>
+            <span>Student</span>
           </div>
         </div>
       </header>
 
       <div className="dashboard-main">
+        {/* Search Section */}
+        <div className="welcome-card">
+          <div className="welcome-content">
+            <h2 className="welcome-title">Certificate Lookup</h2>
+            <p className="welcome-subtitle">
+              Enter your Certificate ID to view blockchain-verified credentials
+            </p>
+          </div>
+          <form className="cert-search-form" onSubmit={handleSearch}>
+            <input
+              type="text"
+              placeholder="e.g. CERT-2025-XXXXXXXX"
+              value={certIdInput}
+              onChange={(e) => setCertIdInput(e.target.value)}
+              className="cert-search-input"
+            />
+            <button
+              type="submit"
+              className="action-btn primary-action"
+              disabled={loading}
+            >
+              <Search size={20} />
+              <span>{loading ? "Searching..." : "Search"}</span>
+            </button>
+          </form>
+        </div>
+
         {loading && (
           <div className="dashboard-loading">
             <p>Loading certificate data...</p>
@@ -125,177 +249,380 @@ const StudentDashboard = () => {
           </div>
         )}
 
-        {!loading && !error && !studentData && (
-          <div className="dashboard-error">
-            <p>No certificate data available.</p>
-          </div>
-        )}
-
-        {!loading && !error && studentData && (
+        {!loading && studentData && (
           <>
-            {/* Welcome Section */}
-            <div className="welcome-card">
+            {/* Status Badge */}
+            <div className="welcome-card" style={{ marginTop: "0" }}>
               <div className="welcome-content">
-                <h2 className="welcome-title">
-                  Welcome back, {(studentData.name || 'Student').split(' ')[0]}! 👋
-                </h2>
+                <h2 className="welcome-title">Certificate Found</h2>
                 <p className="welcome-subtitle">
-                  Your credentials are securely stored on the blockchain
+                  This credential is stored on the Polygon Amoy blockchain
                 </p>
               </div>
               <div className="verification-badge-large">
                 <CheckCircle size={24} />
-                <span>{studentData.status === 'Verified' ? 'Verified' : 'Not Verified'}</span>
+                <span>{studentData.status}</span>
               </div>
             </div>
 
             {/* Main Grid */}
             <div className="dashboard-grid">
-          {/* Certificate Details Card */}
-          <div className="dashboard-card certificate-card">
-            <div className="card-header">
-              <div className="card-header-title">
-                <FileText size={24} />
-                <h3>Certificate Details</h3>
-              </div>
-              <span className={`status-badge ${studentData.status === 'Verified' ? 'verified' : 'unverified'}`}>
-                {studentData.status}
-              </span>
-            </div>
-
-            <div className="details-grid">
-              <div className="detail-item">
-                <label>Full Name</label>
-                <p>{studentData.name}</p>
-              </div>
-              <div className="detail-item">
-                <label>Roll Number</label>
-                <p>{studentData.rollNumber}</p>
-              </div>
-              <div className="detail-item">
-                <label>Degree</label>
-                <p>{studentData.degree}</p>
-              </div>
-              <div className="detail-item">
-                <label>Branch</label>
-                <p>{studentData.branch}</p>
-              </div>
-              <div className="detail-item">
-                <label>Graduation Year</label>
-                <p>{studentData.graduationYear}</p>
-              </div>
-              <div className="detail-item">
-                <label>Certificate ID</label>
-                <p className="cert-id-text">{studentData.certId}</p>
-              </div>
-              <div className="detail-item">
-                <label>Issue Date</label>
-                <p>{new Date(studentData.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-              </div>
-              <div className="detail-item">
-                <label>Issuer</label>
-                <p>{studentData.issuer}</p>
-              </div>
-            </div>
-
-            <div className="card-actions">
-              <button className="action-btn primary-action" onClick={handleDownload}>
-                <Download size={20} />
-                <span>Download Certificate</span>
-              </button>
-              <button className="action-btn secondary-action" onClick={handleShare}>
-                <Share2 size={20} />
-                <span>Share</span>
-              </button>
-              <button className="action-btn secondary-action" onClick={() => setShowQR(!showQR)}>
-                <QrCode size={20} />
-                <span>Show QR</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Blockchain Details Card */}
-          <div className="dashboard-card blockchain-card">
-            <div className="card-header">
-              <div className="card-header-title">
-                <Shield size={24} />
-                <h3>Blockchain Details</h3>
-              </div>
-              <div className="blockchain-live-badge">
-                <div className="pulse-indicator"></div>
-                <span>On-Chain</span>
-              </div>
-            </div>
-
-            <div className="blockchain-info">
-              <div className="blockchain-item">
-                <label>Transaction Hash</label>
-                <code className="blockchain-value hash-text">{studentData.transactionHash}</code>
-              </div>
-              <div className="blockchain-item">
-                <label>Block Number</label>
-                <code className="blockchain-value">#{studentData.blockNumber}</code>
-              </div>
-              <div className="blockchain-item">
-                <label>Network</label>
-                <div className="network-badge">
-                  <div className="pulse-indicator"></div>
-                  <span>Polygon Mumbai</span>
+              {/* Certificate Details Card */}
+              <div className="dashboard-card certificate-card">
+                <div className="card-header">
+                  <div className="card-header-title">
+                    <FileText size={24} />
+                    <h3>On-Chain Record</h3>
+                  </div>
+                  <span
+                    className={`status-badge ${studentData.status === "Verified" ? "verified" : "unverified"}`}
+                  >
+                    {studentData.status}
+                  </span>
                 </div>
-              </div>
-            </div>
 
-            <div className="security-features">
-              <h4 className="security-title">Security Features</h4>
-              <div className="security-list">
-                <div className="security-item">
-                  <CheckCircle size={18} />
-                  <span>Tamper-Proof Record</span>
+                <div className="details-grid">
+                  <div className="detail-item">
+                    <label>Certificate ID</label>
+                    <p className="cert-id-text">{studentData.certId}</p>
+                  </div>
+                  <div className="detail-item">
+                    <label>Issued By</label>
+                    <p>{studentData.issuer}</p>
+                  </div>
+                  <div className="detail-item">
+                    <label>Issuer Address</label>
+                    <p className="hash-text" style={{ fontSize: "0.75rem" }}>
+                      {studentData.issuerAddress}
+                    </p>
+                  </div>
+                  <div className="detail-item">
+                    <label>Issue Date</label>
+                    <p>
+                      {new Date(studentData.issueDate).toLocaleDateString(
+                        "en-US",
+                        { year: "numeric", month: "long", day: "numeric" },
+                      )}
+                    </p>
+                  </div>
+                  <div className="detail-item">
+                    <label>Data Hash</label>
+                    <p
+                      className="hash-text"
+                      style={{ fontSize: "0.75rem", wordBreak: "break-all" }}
+                    >
+                      {studentData.dataHash}
+                    </p>
+                  </div>
                 </div>
-                <div className="security-item">
-                  <CheckCircle size={18} />
-                  <span>Immutable Data</span>
-                </div>
-                <div className="security-item">
-                  <CheckCircle size={18} />
-                  <span>Publicly Verifiable</span>
-                </div>
-                <div className="security-item">
-                  <CheckCircle size={18} />
-                  <span>Decentralized Storage</span>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* QR Code Card */}
-          {showQR && studentData && (
-            <div className="dashboard-card qr-card">
-              <div className="card-header">
-                <div className="card-header-title">
-                  <QrCode size={24} />
-                  <h3>Verification QR Code</h3>
+                <div className="card-actions">
+                  <button
+                    className="action-btn secondary-action"
+                    onClick={handleShare}
+                  >
+                    <Share2 size={20} />
+                    <span>Share</span>
+                  </button>
+                  <button
+                    className="action-btn secondary-action"
+                    onClick={() => setShowQR(!showQR)}
+                  >
+                    <QrCode size={20} />
+                    <span>Show QR</span>
+                  </button>
+                  <button
+                    className="action-btn secondary-action"
+                    onClick={() => setVerifyMode(!verifyMode)}
+                  >
+                    <Shield size={20} />
+                    <span>{verifyMode ? "Hide Verify" : "Verify My Data"}</span>
+                  </button>
                 </div>
-                <button className="close-qr-btn" onClick={() => setShowQR(false)}>×</button>
               </div>
 
-              <div className="qr-display">
-                <div className="qr-code-wrapper">
-                  <QRCodeSVG
-                    value={`${window.location.origin}/verify/${studentData.certId}`}
-                    size={200}
-                    level="H"
-                    includeMargin={true}
-                  />
+              {/* Blockchain Details Card */}
+              <div className="dashboard-card blockchain-card">
+                <div className="card-header">
+                  <div className="card-header-title">
+                    <Shield size={24} />
+                    <h3>Blockchain Details</h3>
+                  </div>
+                  <div className="blockchain-live-badge">
+                    <div className="pulse-indicator"></div>
+                    <span>On-Chain</span>
+                  </div>
                 </div>
-                <p className="qr-instruction">Scan this QR code to instantly verify your credentials</p>
-                <div className="verification-url">
-                  <code>{`${window.location.origin}/verify/${studentData.certId}`}</code>
+
+                <div className="blockchain-info">
+                  <div className="blockchain-item">
+                    <label>Block Number</label>
+                    <code className="blockchain-value">
+                      #{studentData.blockNumber}
+                    </code>
+                  </div>
+                  <div className="blockchain-item">
+                    <label>Timestamp</label>
+                    <code className="blockchain-value">
+                      {new Date(studentData.timestamp * 1000).toLocaleString()}
+                    </code>
+                  </div>
+                  <div className="blockchain-item">
+                    <label>Network</label>
+                    <div className="network-badge">
+                      <div className="pulse-indicator"></div>
+                      <span>Polygon Amoy</span>
+                    </div>
+                  </div>
+                  <div className="blockchain-item">
+                    <label>Explorer</label>
+                    <a
+                      href={`https://amoy.polygonscan.com/block/${studentData.blockNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="blockchain-value"
+                      style={{ color: "#6366f1", textDecoration: "underline" }}
+                    >
+                      View on PolygonScan
+                    </a>
+                  </div>
+                </div>
+
+                <div className="security-features">
+                  <h4 className="security-title">Security Features</h4>
+                  <div className="security-list">
+                    <div className="security-item">
+                      <CheckCircle size={18} />
+                      <span>Tamper-Proof Record</span>
+                    </div>
+                    <div className="security-item">
+                      <CheckCircle size={18} />
+                      <span>Immutable Data</span>
+                    </div>
+                    <div className="security-item">
+                      <CheckCircle size={18} />
+                      <span>Publicly Verifiable</span>
+                    </div>
+                    <div className="security-item">
+                      <CheckCircle size={18} />
+                      <span>Decentralized Storage</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Verify Data Card */}
+              {verifyMode && (
+                <div className="dashboard-card certificate-card">
+                  <div className="card-header">
+                    <div className="card-header-title">
+                      <Shield size={24} />
+                      <h3>Verify Your Details</h3>
+                    </div>
+                  </div>
+                  <p
+                    style={{
+                      color: "#94a3b8",
+                      marginBottom: "1rem",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Enter your personal details to verify they match the
+                    on-chain hash. No personal data is stored on the blockchain
+                    — only a hash.
+                  </p>
+                  <form onSubmit={handleVerifyData} className="details-grid">
+                    <div className="detail-item">
+                      <label>Full Name</label>
+                      <input
+                        type="text"
+                        value={verifyForm.name}
+                        onChange={(e) =>
+                          setVerifyForm((f) => ({ ...f, name: e.target.value }))
+                        }
+                        className="cert-search-input"
+                        placeholder="Your full name"
+                      />
+                    </div>
+                    <div className="detail-item">
+                      <label>Roll Number</label>
+                      <input
+                        type="text"
+                        value={verifyForm.rollNumber}
+                        onChange={(e) =>
+                          setVerifyForm((f) => ({
+                            ...f,
+                            rollNumber: e.target.value,
+                          }))
+                        }
+                        className="cert-search-input"
+                        placeholder="e.g. 2021CS001"
+                      />
+                    </div>
+                    <div className="detail-item">
+                      <label>Degree</label>
+                      <input
+                        type="text"
+                        value={verifyForm.degree}
+                        onChange={(e) =>
+                          setVerifyForm((f) => ({
+                            ...f,
+                            degree: e.target.value,
+                          }))
+                        }
+                        className="cert-search-input"
+                        placeholder="e.g. B.Tech"
+                      />
+                    </div>
+                    <div className="detail-item">
+                      <label>Branch</label>
+                      <input
+                        type="text"
+                        value={verifyForm.branch}
+                        onChange={(e) =>
+                          setVerifyForm((f) => ({
+                            ...f,
+                            branch: e.target.value,
+                          }))
+                        }
+                        className="cert-search-input"
+                        placeholder="e.g. Computer Science"
+                      />
+                    </div>
+                    <div className="detail-item">
+                      <label>Graduation Year</label>
+                      <input
+                        type="number"
+                        value={verifyForm.graduationYear}
+                        onChange={(e) =>
+                          setVerifyForm((f) => ({
+                            ...f,
+                            graduationYear: e.target.value,
+                          }))
+                        }
+                        className="cert-search-input"
+                        placeholder="e.g. 2025"
+                      />
+                    </div>
+                    <div
+                      className="detail-item"
+                      style={{ gridColumn: "1 / -1" }}
+                    >
+                      <button
+                        type="submit"
+                        className="action-btn primary-action"
+                        disabled={verifyLoading}
+                        style={{ width: "100%" }}
+                      >
+                        <Shield size={20} />
+                        <span>
+                          {verifyLoading ? "Verifying..." : "Verify Data"}
+                        </span>
+                      </button>
+                    </div>
+                  </form>
+                  {verifyResult && (
+                    <>
+                      <div
+                        style={{
+                          marginTop: "1rem",
+                          padding: "1rem",
+                          borderRadius: "0.5rem",
+                          background: verifyResult.valid
+                            ? "rgba(34,197,94,0.1)"
+                            : "rgba(239,68,68,0.1)",
+                          border: `1px solid ${verifyResult.valid ? "#22c55e" : "#ef4444"}`,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        {verifyResult.valid ? (
+                          <CheckCircle size={20} color="#22c55e" />
+                        ) : (
+                          <XCircle size={20} color="#ef4444" />
+                        )}
+                        <span
+                          style={{
+                            color: verifyResult.valid ? "#22c55e" : "#ef4444",
+                          }}
+                        >
+                          {verifyResult.message}
+                        </span>
+                      </div>
+                      {!verifyResult.valid && verifyResult.computedHash && (
+                        <div
+                          style={{
+                            marginTop: "0.75rem",
+                            fontSize: "0.78rem",
+                            color: "#94a3b8",
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          <p style={{ marginBottom: "0.25rem" }}>
+                            <strong style={{ color: "#cbd5e1" }}>
+                              Stored hash:
+                            </strong>{" "}
+                            <code style={{ wordBreak: "break-all" }}>
+                              {verifyResult.storedHash}
+                            </code>
+                          </p>
+                          <p style={{ marginBottom: "0.5rem" }}>
+                            <strong style={{ color: "#cbd5e1" }}>
+                              Your hash:
+                            </strong>{" "}
+                            <code style={{ wordBreak: "break-all" }}>
+                              {verifyResult.computedHash}
+                            </code>
+                          </p>
+                          <p style={{ color: "#f59e0b" }}>
+                            ⚠ Verification is <strong>case-sensitive</strong>.
+                            Every field must match exactly as it was entered
+                            when the certificate was issued (including spaces
+                            and capitalisation).
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* QR Code Card */}
+              {showQR && (
+                <div className="dashboard-card qr-card">
+                  <div className="card-header">
+                    <div className="card-header-title">
+                      <QrCode size={24} />
+                      <h3>Verification QR Code</h3>
+                    </div>
+                    <button
+                      className="close-qr-btn"
+                      onClick={() => setShowQR(false)}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="qr-display">
+                    <div className="qr-code-wrapper">
+                      <QRCodeSVG
+                        value={`${window.location.origin}/verify/${studentData.certId}`}
+                        size={200}
+                        level="H"
+                        includeMargin={true}
+                      />
+                    </div>
+                    <p className="qr-instruction">
+                      Scan this QR code to instantly verify credentials
+                    </p>
+                    <div className="verification-url">
+                      <code>{`${window.location.origin}/verify/${studentData.certId}`}</code>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
           </>
         )}
       </div>

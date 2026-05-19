@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Shield, CheckCircle, XCircle, ArrowLeft, ExternalLink } from "lucide-react";
+import {
+  Shield,
+  CheckCircle,
+  XCircle,
+  ArrowLeft,
+  ExternalLink,
+} from "lucide-react";
 import "./VerificationPage.css";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const API_BASE_URL =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 const VerificationPage = () => {
   const { certId } = useParams();
@@ -35,7 +42,9 @@ const VerificationPage = () => {
 
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
-          throw new Error(body.error || body.details || "Failed to verify certificate.");
+          throw new Error(
+            body.error || body.details || "Failed to verify certificate.",
+          );
         }
 
         const body = await response.json();
@@ -56,7 +65,7 @@ const VerificationPage = () => {
 
   const explorerUrl =
     data && data.blockNumber
-      ? `https://mumbai.polygonscan.com/block/${data.blockNumber}`
+      ? `https://amoy.polygonscan.com/block/${data.blockNumber}`
       : "";
 
   const isVerified = !error && data && data.exists;
@@ -101,10 +110,14 @@ const VerificationPage = () => {
 
         {!loading && !error && data && (
           <div className="verify-card verify-result-card">
-            <div className={`verify-status-icon ${isVerified ? "success" : "error"}`}>
+            <div
+              className={`verify-status-icon ${isVerified ? "success" : "error"}`}
+            >
               {isVerified ? <CheckCircle size={40} /> : <XCircle size={40} />}
             </div>
-            <h2>{isVerified ? "Certificate Verified" : "Certificate Not Found"}</h2>
+            <h2>
+              {isVerified ? "Certificate Verified" : "Certificate Not Found"}
+            </h2>
 
             <p className="verify-cert-id">
               Certificate ID: <code>{data.certId}</code>
@@ -113,7 +126,11 @@ const VerificationPage = () => {
             <div className="verify-details-grid">
               <div className="verify-detail-item">
                 <label>Status</label>
-                <p>{isVerified ? "Verified on-chain" : "No matching on-chain record"}</p>
+                <p>
+                  {isVerified
+                    ? "Verified on-chain"
+                    : "No matching on-chain record"}
+                </p>
               </div>
               <div className="verify-detail-item">
                 <label>Issuer</label>
@@ -156,5 +173,3 @@ const VerificationPage = () => {
 };
 
 export default VerificationPage;
-
-

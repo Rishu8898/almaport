@@ -211,15 +211,16 @@ const AdminPanel = () => {
     try {
       // ✅ Step 1: Generate data hash on frontend (matching Solidity's generateDataHash)
       // Using ethers v6 API: ethers.solidityPackedKeccak256 (renamed from solidityKeccak256)
+      // Generate hash based only on personal data (no Certificate ID)
+      // Normalize: trim + lowercase text fields so hash matches verification side
       const dataHash = ethers.solidityPackedKeccak256(
-        ["string", "string", "string", "string", "string", "string"],
+        ["string", "string", "string", "string", "string"],
         [
-          formData.name,
-          formData.rollNumber,
-          formData.degree,
-          formData.branch,
-          String(formData.graduationYear),
-          formData.certId,
+          formData.name.trim().toLowerCase(),
+          formData.rollNumber.trim().toLowerCase(),
+          formData.degree.trim().toLowerCase(),
+          formData.branch.trim().toLowerCase(),
+          String(formData.graduationYear).trim(),
         ],
       );
 
@@ -355,7 +356,7 @@ const AdminPanel = () => {
           <div className="blockchain-badge">
             <div className="pulse-dot"></div>
             <span>
-              {stats.network?.name ? `${stats.network.name}` : "Polygon Mumbai"}
+              {stats.network?.name ? `${stats.network.name}` : "Polygon Amoy"}
             </span>
           </div>
           <div className="admin-user-actions">
