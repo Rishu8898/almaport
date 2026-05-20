@@ -18,6 +18,7 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import "./StudentDashboard.css";
 import { clearSession } from "../auth/session";
+import { degrees, branches } from "../utils/options";
 
 const API_BASE_URL =
   import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
@@ -164,6 +165,8 @@ const StudentDashboard = () => {
       setVerifyLoading(false);
     }
   };
+
+  // degree and branch options imported to match Admin form
 
   const handleShare = () => {
     const verificationUrl = `${window.location.origin}/verify/${studentData?.certId || ""}`;
@@ -461,33 +464,37 @@ const StudentDashboard = () => {
                     </div>
                     <div className="detail-item">
                       <label>Degree</label>
-                      <input
-                        type="text"
+                      <select
                         value={verifyForm.degree}
                         onChange={(e) =>
-                          setVerifyForm((f) => ({
-                            ...f,
-                            degree: e.target.value,
-                          }))
+                          setVerifyForm((f) => ({ ...f, degree: e.target.value }))
                         }
                         className="cert-search-input"
-                        placeholder="e.g. B.Tech"
-                      />
+                      >
+                        <option value="">Select Degree</option>
+                        {degrees.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="detail-item">
                       <label>Branch</label>
-                      <input
-                        type="text"
+                      <select
                         value={verifyForm.branch}
                         onChange={(e) =>
-                          setVerifyForm((f) => ({
-                            ...f,
-                            branch: e.target.value,
-                          }))
+                          setVerifyForm((f) => ({ ...f, branch: e.target.value }))
                         }
                         className="cert-search-input"
-                        placeholder="e.g. Computer Science"
-                      />
+                      >
+                        <option value="">Select Branch</option>
+                        {branches.map((b) => (
+                          <option key={b} value={b}>
+                            {b}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="detail-item">
                       <label>Graduation Year</label>

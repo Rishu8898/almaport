@@ -17,6 +17,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { ethers } from "ethers";
 import "./AdminPanel.css";
 import { clearSession, getAuthHeader, getUser } from "../auth/session";
+import { degrees, branches } from "../utils/options";
 
 const API_BASE_URL =
   import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
@@ -145,17 +146,7 @@ const AdminPanel = () => {
     loadStats();
   }, []);
 
-  const degrees = ["B.Tech", "M.Tech", "MBA", "MCA", "B.Sc", "M.Sc", "PhD"];
-  const branches = [
-    "Computer Science",
-    "Electronics",
-    "Mechanical",
-    "Civil",
-    "Electrical",
-    "Information Technology",
-    "Chemical",
-    "Biotechnology",
-  ];
+  // degrees and branches imported from shared options
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -209,90 +200,33 @@ const AdminPanel = () => {
     setApiError("");
 
     try {
-      // ✅ Step 1: Generate data hash on frontend (matching Solidity's generateDataHash)
-      // Using ethers v6 API: ethers.solidityPackedKeccak256 (renamed from solidityKeccak256)
-      // Generate hash based only on personal data (no Certificate ID)
-      // Normalize: trim + lowercase text fields so hash matches verification side
-      const dataHash = ethers.solidityPackedKeccak256(
-        ["string", "string", "string", "string", "string"],
-        [
-          formData.name.trim().toLowerCase(),
-          formData.rollNumber.trim().toLowerCase(),
-          formData.degree.trim().toLowerCase(),
-          formData.branch.trim().toLowerCase(),
-          String(formData.graduationYear).trim(),
-        ],
-      );
-
-      console.log("📝 Data Hash:", dataHash);
-
-      // ✅ Step 2: Get contract address from environment
-      const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
-      if (!contractAddress) {
-        throw new Error(
-          "Contract address not configured. Set VITE_CONTRACT_ADDRESS in .env",
-        );
-      }
-
-      // ✅ Step 3: Minimal ABI for addAlumniRecord function
-      const contractABI = [
+      // Submit via backend so server computes the hash and sends transaction
+      setApiError("");
+      const resp = await axios.post(
+        `${API_BASE_URL}/api/admin/add`,
         {
-          inputs: [
-            { internalType: "string", name: "_certId", type: "string" },
-            { internalType: "bytes32", name: "_dataHash", type: "bytes32" },
-          ],
-          name: "addAlumniRecord",
-          outputs: [
-            { internalType: "bool", name: "success", type: "bool" },
-            { internalType: "uint256", name: "timestamp", type: "uint256" },
-            { internalType: "uint256", name: "blockNumber", type: "uint256" },
-          ],
-          stateMutability: "nonpayable",
-          type: "function",
+          name: formData.name,
+          rollNumber: formData.rollNumber,
+          degree: formData.degree,
+          branch: formData.branch,
+          graduationYear: Number(formData.graduationYear),
+          certId: formData.certId,
         },
-      ];
-
-      // ✅ Step 4: Get ethers provider from MetaMask and create signer
-      // Using ethers v6 API: BrowserProvider (replaces Web3Provider in v6)
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-
-      // ✅ Step 5: Create contract instance connected to signer
-      const contract = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer,
+        { headers: { ...getAuthHeader() } },
       );
 
-      console.log("🔗 Contract Address:", contractAddress);
-      console.log("👤 Signer Address:", walletAddress);
-
-      // ✅ Step 6: Call smart contract function
-      setApiError(""); // Clear any previous errors
-      const tx = await contract.addAlumniRecord(formData.certId, dataHash);
-
-      console.log("⏳ Transaction submitted:", tx.hash);
-      setApiError(`⏳ Transaction submitted! Hash: ${tx.hash}`);
-
-      // ✅ Step 7: Wait for transaction confirmation
-      const receipt = await tx.wait();
-
-      console.log("✅ Transaction confirmed:", receipt);
-
-      // ✅ Step 8: Build result data
       const finalResult = {
-        transactionHash: receipt.transactionHash,
-        certId: formData.certId,
-        blockNumber: receipt.blockNumber,
-        timestamp: new Date().toISOString(),
+        transactionHash: resp.data.transactionHash,
+        certId: resp.data.certId || formData.certId,
+        blockNumber: resp.data.blockNumber,
+        timestamp: resp.data.timestamp,
         walletAddress: walletAddress,
       };
 
       setResult(finalResult);
       setSubmitted(true);
-      setApiError(""); // Clear loading message
+      setApiError("");
 
-      // Reset form after 5 seconds
       setTimeout(() => {
         setSubmitted(false);
         setResult(null);
@@ -329,14 +263,50 @@ const AdminPanel = () => {
     navigate("/");
   };
 
-  const generateCertId = () => {
+  const generateCertId = async () => {
     const prefix = "CERT";
     const year = new Date().getFullYear();
-    const random = Math.random().toString(36).substr(2, 9).toUpperCase();
-    setFormData((prev) => ({
-      ...prev,
-      certId: `${prefix}-${year}-${random}`,
-    }));
+    // Prefer crypto.randomUUID for uniqueness; fallback to crypto.getRandomValues or Math.random
+    let idPart = "";
+    try {
+      if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        idPart = crypto.randomUUID().split("-")[0].toUpperCase();
+      } else if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+        const arr = new Uint8Array(6);
+        crypto.getRandomValues(arr);
+        idPart = Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase().slice(0, 9);
+      } else {
+        idPart = Math.random().toString(36).slice(2, 11).toUpperCase();
+      }
+    } catch (e) {
+      idPart = Math.random().toString(36).slice(2, 11).toUpperCase();
+    }
+
+    let candidate = `${prefix}-${year}-${idPart}`;
+
+    // Check uniqueness against backend; retry up to 5 times
+    const maxTries = 5;
+    let tries = 0;
+    try {
+      while (tries < maxTries) {
+        // Query backend to see if record exists
+        const resp = await axios.get(
+          `${API_BASE_URL}/api/verify/${encodeURIComponent(candidate)}`,
+        ).catch((_) => null);
+
+        const exists = resp && resp.data && resp.data.exists;
+        if (!exists) break; // unique
+
+        // otherwise regenerate
+        tries += 1;
+        const extra = Math.random().toString(36).slice(2, 8).toUpperCase();
+        candidate = `${prefix}-${year}-${extra}`;
+      }
+    } catch (e) {
+      // ignore errors checking uniqueness; fallback to candidate
+    }
+
+    setFormData((prev) => ({ ...prev, certId: candidate }));
   };
 
   return (
