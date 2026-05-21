@@ -16,7 +16,7 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { ethers } from "ethers";
 import "./AdminPanel.css";
-import { clearSession, getAuthHeader, getUser } from "../auth/session";
+import { getUser } from "../auth/session";
 import { degrees, branches } from "../utils/options";
 
 const API_BASE_URL =
@@ -43,6 +43,8 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [recentIssued, setRecentIssued] = useState([]);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [stats, setStats] = useState({ totalRecords: null, network: null });
@@ -131,11 +133,7 @@ const AdminPanel = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const resp = await axios.get(`${API_BASE_URL}/api/admin/stats`, {
-          headers: {
-            ...getAuthHeader(),
-          },
-        });
+        const resp = await axios.get(`${API_BASE_URL}/api/admin/stats`);
         setStats(resp.data);
       } catch (err) {
         // Stats are optional; keep UI functional even if it fails.
@@ -144,7 +142,42 @@ const AdminPanel = () => {
     };
 
     loadStats();
+    loadRecentIssued();
   }, []);
+
+  function loadRecentIssued() {
+    try {
+      const raw = localStorage.getItem('almaPort.issued') || '[]';
+      const arr = JSON.parse(raw);
+      setRecentIssued(Array.isArray(arr) ? arr : []);
+    } catch (e) {
+      setRecentIssued([]);
+    }
+  }
+
+  function persistIssued(record) {
+    try {
+      const raw = localStorage.getItem('almaPort.issued') || '[]';
+      const arr = JSON.parse(raw) || [];
+      // prepend newest
+      arr.unshift(record);
+      // keep only last 50
+      const trimmed = arr.slice(0, 50);
+      localStorage.setItem('almaPort.issued', JSON.stringify(trimmed));
+      setRecentIssued(trimmed);
+    } catch (e) {
+      console.error('Failed to persist issued record locally', e);
+    }
+  }
+
+  const copyText = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  } 
 
   // degrees and branches imported from shared options
 
@@ -212,7 +245,7 @@ const AdminPanel = () => {
           graduationYear: Number(formData.graduationYear),
           certId: formData.certId,
         },
-        { headers: { ...getAuthHeader() } },
+        {},
       );
 
       const finalResult = {
@@ -227,18 +260,27 @@ const AdminPanel = () => {
       setSubmitted(true);
       setApiError("");
 
-      setTimeout(() => {
-        setSubmitted(false);
-        setResult(null);
-        setFormData({
-          name: "",
-          rollNumber: "",
-          degree: "",
-          branch: "",
-          graduationYear: "",
-          certId: "",
-        });
-      }, 5000);
+      // Persist issued cert locally for admin convenience
+      const issuedRecord = {
+        certId: finalResult.certId,
+        transactionHash: finalResult.transactionHash,
+        blockNumber: finalResult.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+      };
+      persistIssued(issuedRecord);
+
+      // clear form fields immediately but keep result visible until admin closes
+      setFormData({
+        name: "",
+        rollNumber: "",
+        degree: "",
+        branch: "",
+        graduationYear: "",
+        certId: "",
+      });
+
+      // Open modal with quick actions
+      setModalOpen(true);
     } catch (error) {
       console.error("❌ Error:", error);
 
@@ -259,7 +301,6 @@ const AdminPanel = () => {
   };
 
   const handleLogout = () => {
-    clearSession();
     navigate("/");
   };
 
@@ -373,6 +414,47 @@ const AdminPanel = () => {
       </header>
 
       <div className="main-content">
+        {/* Modal for quick actions (copy, QR) */}
+        {modalOpen && result && (
+          <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <h3>Certificate Issued</h3>
+              <p>Certificate ID: <strong>{result.certId}</strong></p>
+              <div className="modal-qr">
+                <QRCodeSVG
+                  value={`${window.location.origin}/verify/${result.certId}`}
+                  size={200}
+                  level="H"
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  className="small-btn"
+                  onClick={async () => {
+                    await copyText(result.certId);
+                    alert('Certificate ID copied to clipboard');
+                  }}
+                >
+                  Copy Cert ID
+                </button>
+                <a
+                  className="small-btn"
+                  href={`/verify/${encodeURIComponent(result.certId)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open Verify Page
+                </a>
+                <button
+                  className="small-btn"
+                  onClick={() => setModalOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Stats Cards */}
         <div className="stats-grid">
           <div className="stat-card stat-card-primary">
@@ -441,6 +523,39 @@ const AdminPanel = () => {
             <div className="wallet-warning-banner">
               <Wallet size={18} className="wallet-warning-icon" />
               <span>Please connect your MetaMask wallet to submit records</span>
+            </div>
+          )}
+
+          {/* Recent issued list (localStorage) */}
+          {recentIssued.length > 0 && (
+            <div className="recent-issued">
+              <h4>Recently Issued</h4>
+              <ul>
+                {recentIssued.slice(0, 10).map((r) => (
+                  <li key={r.certId} className="recent-item">
+                    <span className="recent-cert">{r.certId}</span>
+                    <div className="recent-actions">
+                      <button
+                        className="small-btn"
+                        onClick={async () => {
+                          await copyText(r.certId);
+                          alert('Certificate ID copied to clipboard');
+                        }}
+                      >
+                        Copy
+                      </button>
+                      <a
+                        className="small-btn"
+                        href={`/verify/${encodeURIComponent(r.certId)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View
+                      </a>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -667,6 +782,34 @@ const AdminPanel = () => {
                   </p>
                 </div>
               )}
+              <div className="success-actions">
+                <button
+                  className="small-btn"
+                  onClick={async () => {
+                    if (result?.certId) {
+                      await copyText(result.certId);
+                      alert('Certificate ID copied to clipboard');
+                    }
+                  }}
+                >
+                  Copy Cert ID
+                </button>
+                <button
+                  className="small-btn"
+                  onClick={() => setModalOpen(true)}
+                >
+                  Quick Actions
+                </button>
+                <button
+                  className="small-btn"
+                  onClick={() => {
+                    setSubmitted(false);
+                    setResult(null);
+                  }}
+                >
+                  Done
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -1,122 +1,28 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { GoogleLogin } from "@react-oauth/google";
 import {
   Shield,
   Users,
   GraduationCap,
-  Mail,
   ArrowRight,
   CheckCircle,
   Lock,
   Sparkles,
 } from "lucide-react";
-import { isAuthenticated, setSession } from "../auth/session";
 import "./HomePage.css";
 
-const API_BASE_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
 const HomePage = () => {
-  const navigate = useNavigate();
   const [hoveredCard, setHoveredCard] = useState(null);
-  const [oauthOpen, setOauthOpen] = useState(false);
-  const [oauthUserType, setOauthUserType] = useState(null); // 'admin' | 'student'
-  const [oauthError, setOauthError] = useState("");
 
   const handleAdminLogin = () => {
-    // ❌ GMAIL AUTH COMMENTED OUT - Bypassing for development
-    // if (!isAuthenticated()) {
-    //   handleGmailLogin('admin');
-    //   return;
-    // }
-    navigate("/admin");
+    window.location.assign("/admin");
   };
 
   const handleStudentLogin = () => {
-    // ❌ GMAIL AUTH COMMENTED OUT - Bypassing for development
-    // if (!isAuthenticated()) {
-    //   handleGmailLogin('student');
-    //   return;
-    // }
-    navigate("/student/dashboard");
-  };
-
-  const handleGmailLogin = (userType) => {
-    setOauthError("");
-    setOauthUserType(userType);
-    setOauthOpen(true);
-  };
-
-  const handleOAuthSuccess = async (credentialResponse) => {
-    try {
-      setOauthError("");
-
-      const credential = credentialResponse?.credential;
-      if (!credential) {
-        setOauthError("Google login failed: missing credential.");
-        return;
-      }
-
-      const resp = await axios.post(`${API_BASE_URL}/api/auth/google`, {
-        credential,
-        userType: oauthUserType,
-      });
-
-      setSession({ token: resp.data.token, user: resp.data.user });
-      setOauthOpen(false);
-
-      if (resp.data.user.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/student/dashboard");
-      }
-    } catch (err) {
-      setOauthError(
-        err.response?.data?.error ||
-          err.response?.data?.details ||
-          "Google login failed. Please try again.",
-      );
-    }
+    window.location.assign("/student/dashboard");
   };
 
   return (
     <div className="home-container">
-      {oauthOpen && (
-        <div className="oauth-modal-overlay" role="dialog" aria-modal="true">
-          <div className="oauth-modal">
-            <div className="oauth-modal-header">
-              <h3 className="oauth-modal-title">Continue with Google</h3>
-              <button
-                className="oauth-modal-close"
-                onClick={() => setOauthOpen(false)}
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </div>
-
-            <p className="oauth-modal-subtitle">
-              Signing in as <strong>{oauthUserType}</strong>
-            </p>
-
-            {oauthError && <div className="oauth-error">{oauthError}</div>}
-
-            <div className="oauth-google-btn">
-              <GoogleLogin
-                onSuccess={handleOAuthSuccess}
-                onError={() => setOauthError("Google login failed.")}
-              />
-            </div>
-
-            <p className="oauth-hint">
-              If you don’t see the button, set{" "}
-              <code>VITE_GOOGLE_CLIENT_ID</code> in your frontend env.
-            </p>
-          </div>
-        </div>
-      )}
       {/* Hero Section */}
       <header className="home-header">
         <div className="header-glass">
@@ -213,21 +119,13 @@ const HomePage = () => {
                 </div>
               </div>
 
-              {/* ❌ GMAIL LOGIN COMMENTED OUT - Using direct navigation */}
               <button
                 className="login-btn admin-btn"
                 onClick={() => handleAdminLogin()}
               >
-                <Mail size={20} />
-                <span>Login with Gmail</span>
+                <Shield size={20} />
+                <span>Open Admin Portal</span>
                 <ArrowRight size={20} className="arrow-icon" />
-              </button>
-
-              <button
-                className="direct-login-btn"
-                onClick={() => handleAdminLogin()}
-              >
-                Login to continue
               </button>
             </div>
           </div>
@@ -264,21 +162,13 @@ const HomePage = () => {
                 </div>
               </div>
 
-              {/* ❌ GMAIL LOGIN COMMENTED OUT - Using direct navigation */}
               <button
                 className="login-btn student-btn"
                 onClick={() => handleStudentLogin()}
               >
-                <Mail size={20} />
-                <span>Login with Gmail</span>
+                <GraduationCap size={20} />
+                <span>Open Student Portal</span>
                 <ArrowRight size={20} className="arrow-icon" />
-              </button>
-
-              <button
-                className="direct-login-btn"
-                onClick={() => handleStudentLogin()}
-              >
-                Login to continue
               </button>
             </div>
           </div>
