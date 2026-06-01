@@ -4,5 +4,10 @@
   "PRIVATE_KEY": "25e166b3491519b562dd593bffe1e32ae6491b885859e2931434b64e3f721642",
   "JWT_SECRET": "p8T3fW9J2ZxM4R6yE7qDkBvS5HcNnAUmYgLwXK0a1oOeI",
   "ADMIN_EMAILS": "premsuman0509@gmail.com,admin2@example.com",
-  "ADMIN_EMAIL_DOMAIN": ""
+  "ADMIN_EMAIL_DOMAIN": "",
+  "SMTP_HOST": "smtp.gmail.com",
+  "SMTP_PORT": "465",
+  "SMTP_USER": "kumar.rishu0509@gmail.com",
+  "SMTP_PASS": "eumcxewznodlmble",
+  "FRONTEND_URL": "http://localhost:5173"
 }

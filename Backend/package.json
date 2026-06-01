@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon --ignore data/ server.js"
   },
   "keywords": [
     "express",
@@ -20,11 +20,10 @@
     "dotenv": "^16.4.5",
     "ethers": "^5.7.2",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^8.0.10"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
   }
 }
-
-

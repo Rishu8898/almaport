@@ -4,6 +4,7 @@ const path = require('path');
 const { ethers } = require('ethers');
 const { contract, provider, wallet, getNetworkInfo } = require('../blockchain/config');
 const { generateDataHash } = require('../utils/hashUtils');
+const { sendCertificateEmail } = require('../utils/emailUtils');
 
 // Server-side storage for issued certificates
 const dataDir = path.join(__dirname, '..', 'data');
@@ -26,15 +27,15 @@ async function getTxOverrides() {
 const router = express.Router();
 
 // POST /api/admin/add
-// Body: { name, rollNumber, degree, branch, graduationYear, certId }
+// Body: { name, rollNumber, degree, branch, graduationYear, certId, studentEmail }
 router.post('/add', async (req, res) => {
   try {
-    const { name, rollNumber, degree, branch, graduationYear, certId } = req.body || {};
+    const { name, rollNumber, degree, branch, graduationYear, certId, studentEmail } = req.body || {};
 
-    if (!name || !rollNumber || !degree || !branch || !graduationYear || !certId) {
+    if (!name || !rollNumber || !degree || !branch || !graduationYear || !certId || !studentEmail) {
       return res.status(400).json({
         error: 'Missing required fields',
-        required: ['name', 'rollNumber', 'degree', 'branch', 'graduationYear', 'certId'],
+        required: ['name', 'rollNumber', 'degree', 'branch', 'graduationYear', 'certId', 'studentEmail'],
       });
     }
 
@@ -79,6 +80,11 @@ router.post('/add', async (req, res) => {
       console.error('Failed to persist issued record:', e);
       // do not fail the request because of persistence error
     }
+
+    // Send the email to the student asynchronously
+    sendCertificateEmail({ studentEmail, name, rollNumber, degree, branch, graduationYear, certId }).catch(e => {
+      console.error('Failed to send certificate email:', e);
+    });
 
     return res.status(201).json({
       certId,

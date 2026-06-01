@@ -28,6 +28,7 @@ const AdminPanel = () => {
     branch: "",
     graduationYear: "",
     certId: "",
+    studentEmail: "",
   });
 
   // MetaMask State
@@ -220,6 +221,11 @@ const AdminPanel = () => {
       newErrors.graduationYear = "Graduation year is required";
     if (!formData.certId.trim())
       newErrors.certId = "Certificate ID is required";
+    if (!formData.studentEmail.trim()) {
+      newErrors.studentEmail = "Student email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.studentEmail)) {
+      newErrors.studentEmail = "Please enter a valid email address";
+    }
 
     const currentYear = new Date().getFullYear();
     if (
@@ -259,6 +265,7 @@ const AdminPanel = () => {
           branch: formData.branch,
           graduationYear: Number(formData.graduationYear),
           certId: formData.certId,
+          studentEmail: formData.studentEmail,
         },
         {},
       );
@@ -292,6 +299,7 @@ const AdminPanel = () => {
         branch: "",
         graduationYear: "",
         certId: "",
+        studentEmail: "",
       });
 
       // Open modal with quick actions
@@ -340,6 +348,7 @@ const AdminPanel = () => {
         branch: "",
         graduationYear: "",
         certId: "",
+        studentEmail: "",
       });
     }
 
@@ -652,6 +661,23 @@ const AdminPanel = () => {
                   />
                   {errors.name && (
                     <span className="error-text">{errors.name}</span>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Student Email <span className="required">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="studentEmail"
+                    value={formData.studentEmail}
+                    onChange={handleChange}
+                    className={`form-input ${errors.studentEmail ? "input-error" : ""}`}
+                    placeholder="student@example.com"
+                  />
+                  {errors.studentEmail && (
+                    <span className="error-text">{errors.studentEmail}</span>
                   )}
                 </div>
 
