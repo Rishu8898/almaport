@@ -44,34 +44,61 @@ const HomePage = () => {
 
       {/* Hero Content */}
       <section className="hero-section">
-        <div className="hero-content">
-          <div className="hero-badge">
-            <Sparkles size={16} />
-            <span>Secure • Transparent • Immutable</span>
-          </div>
-          <h2 className="hero-title">
-            Verify Alumni Credentials with
-            <span className="gradient-text"> Blockchain Technology</span>
-          </h2>
-          <p className="hero-description">
-            A revolutionary system that ensures tamper-proof, instant
-            verification of educational credentials using blockchain technology.
-            Join thousands of verified alumni worldwide.
-          </p>
+        <div className="hero-layout">
+          <div className="hero-content">
+            <div className="hero-badge">
+              <Sparkles size={16} />
+              <span>Secure • Transparent • Immutable</span>
+            </div>
+            <h2 className="hero-title">
+              Verify Alumni Credentials with
+              <span className="gradient-text"> Blockchain Technology</span>
+            </h2>
+            <p className="hero-description">
+              A revolutionary system that ensures tamper-proof, instant
+              verification of educational credentials using blockchain
+              technology. Join thousands of verified alumni worldwide.
+            </p>
 
-          {/* Features Grid */}
-          <div className="features-grid">
-            <div className="feature-item">
-              <CheckCircle size={20} className="feature-icon" />
-              <span>Instant Verification</span>
+            {/* Features Grid */}
+            <div className="features-grid">
+              <div className="feature-item">
+                <CheckCircle size={20} className="feature-icon" />
+                <span>Instant Verification</span>
+              </div>
+              <div className="feature-item">
+                <Lock size={20} className="feature-icon" />
+                <span>Tamper-Proof Records</span>
+              </div>
+              <div className="feature-item">
+                <Shield size={20} className="feature-icon" />
+                <span>Blockchain Secured</span>
+              </div>
             </div>
-            <div className="feature-item">
-              <Lock size={20} className="feature-icon" />
-              <span>Tamper-Proof Records</span>
-            </div>
-            <div className="feature-item">
-              <Shield size={20} className="feature-icon" />
-              <span>Blockchain Secured</span>
+          </div>
+
+          <div className="hero-visual" aria-hidden="true">
+            <div className="hero-orb hero-orb-one"></div>
+            <div className="hero-orb hero-orb-two"></div>
+            <div className="hero-orb hero-orb-three"></div>
+            <div className="hero-stack">
+              <div className="hero-mini-card hero-mini-card-top">
+                <Shield size={18} />
+                <span>On-chain trust</span>
+              </div>
+              <div className="hero-mini-card hero-mini-card-main">
+                <div className="hero-bar-row">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <strong>Immutable records</strong>
+                <p>Verified by blockchain signals and secure issuance.</p>
+              </div>
+              <div className="hero-mini-card hero-mini-card-bottom">
+                <Users size={18} />
+                <span>1,247 alumni protected</span>
+              </div>
             </div>
           </div>
         </div>

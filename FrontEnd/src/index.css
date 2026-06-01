@@ -1,21 +1,183 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap");
 
-* {
-  margin: 0;
-  padding: 0;
+:root {
+  color-scheme: light;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Arial, sans-serif;
+  --font-display: "Space Grotesk", var(--font-sans);
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  --bg-app: #f6f8fc;
+  --bg-page: #eef3fb;
+  --surface: #ffffff;
+  --surface-raised: rgba(255, 255, 255, 0.92);
+  --surface-muted: #f8fafc;
+  --surface-inset: #f1f5f9;
+
+  --text: #0f172a;
+  --text-soft: #334155;
+  --muted: #64748b;
+  --muted-strong: #475569;
+  --border: #dbe3ef;
+  --border-strong: #cbd5e1;
+
+  --primary: #4f46e5;
+  --primary-strong: #3730a3;
+  --primary-soft: #eef2ff;
+  --accent: #0891b2;
+  --accent-soft: #ecfeff;
+  --success: #059669;
+  --success-soft: #ecfdf5;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+
+  --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #2563eb 52%, #0891b2 100%);
+  --gradient-success: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 8px 20px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 16px 36px rgba(15, 23, 42, 0.11);
+  --shadow-lg: 0 24px 60px rgba(15, 23, 42, 0.14);
+
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.24);
+  --transition-fast: 150ms ease;
+  --transition: 220ms ease;
+  --container: 1400px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg-app: #07111f;
+    --bg-page: #0b1220;
+    --surface: #101827;
+    --surface-raised: rgba(15, 23, 42, 0.92);
+    --surface-muted: #111c2e;
+    --surface-inset: #0b1220;
+    --text: #f8fafc;
+    --text-soft: #dbeafe;
+    --muted: #a8b4c7;
+    --muted-strong: #cbd5e1;
+    --border: #24324a;
+    --border-strong: #334155;
+    --primary-soft: rgba(79, 70, 229, 0.2);
+    --accent-soft: rgba(8, 145, 178, 0.18);
+    --success-soft: rgba(5, 150, 105, 0.16);
+    --warning-soft: rgba(180, 83, 9, 0.16);
+    --danger-soft: rgba(220, 38, 38, 0.16);
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.32);
+    --shadow-md: 0 16px 36px rgba(0, 0, 0, 0.36);
+    --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.42);
+  }
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-body {
+* {
   margin: 0;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+}
+
+html {
+  min-width: 320px;
+  background: var(--bg-app);
+  text-size-adjust: 100%;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--bg-app);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  border: 0;
+}
+
+button:not(:disabled),
+a[href] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+}
+
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family: var(--font-mono);
+}
+
+img,
+svg {
+  display: block;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.22);
+}
+
+:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -8,15 +8,12 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  QrCode,
   Wallet,
   Copy,
   Check,
 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
-import { ethers } from "ethers";
 import "./AdminPanel.css";
-import { getUser } from "../auth/session";
+import { clearSession, getUser } from "../auth/session";
 import { degrees, branches } from "../utils/options";
 
 const API_BASE_URL =
@@ -51,6 +48,14 @@ const AdminPanel = () => {
 
   const user = getUser();
 
+  const resetWalletState = () => {
+    setWalletAddress("");
+    setIsConnected(false);
+    setIsConnecting(false);
+    setWalletError("");
+    setShowCopied(false);
+  };
+
   // ✅ Check if MetaMask is already connected on mount
   useEffect(() => {
     const checkMetaMaskConnection = async () => {
@@ -71,18 +76,28 @@ const AdminPanel = () => {
 
     checkMetaMaskConnection();
 
+    const handleAccountsChanged = (accounts) => {
+      if (accounts.length > 0) {
+        setWalletAddress(accounts[0]);
+        setIsConnected(true);
+      } else {
+        resetWalletState();
+      }
+    };
+
     // Listen for account changes
     if (typeof window.ethereum !== "undefined") {
-      window.ethereum.on("accountsChanged", (accounts) => {
-        if (accounts.length > 0) {
-          setWalletAddress(accounts[0]);
-          setIsConnected(true);
-        } else {
-          setWalletAddress("");
-          setIsConnected(false);
-        }
-      });
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
     }
+
+    return () => {
+      if (typeof window.ethereum?.removeListener === "function") {
+        window.ethereum.removeListener(
+          "accountsChanged",
+          handleAccountsChanged,
+        );
+      }
+    };
   }, []);
 
   // ✅ Connect MetaMask Wallet
@@ -150,7 +165,7 @@ const AdminPanel = () => {
       const raw = localStorage.getItem('almaPort.issued') || '[]';
       const arr = JSON.parse(raw);
       setRecentIssued(Array.isArray(arr) ? arr : []);
-    } catch (e) {
+    } catch {
       setRecentIssued([]);
     }
   }
@@ -174,10 +189,10 @@ const AdminPanel = () => {
     try {
       await navigator.clipboard.writeText(text);
       return true;
-    } catch (e) {
+    } catch {
       return false;
     }
-  } 
+  }
 
   // degrees and branches imported from shared options
 
@@ -300,8 +315,35 @@ const AdminPanel = () => {
     }
   };
 
-  const handleLogout = () => {
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      if (typeof window.ethereum?.request === "function") {
+        await window.ethereum.request({
+          method: "wallet_revokePermissions",
+          params: [{ eth_accounts: {} }],
+        });
+      }
+    } catch (error) {
+      console.info("MetaMask permission revoke skipped:", error);
+    } finally {
+      clearSession();
+      resetWalletState();
+      setSubmitted(false);
+      setResult(null);
+      setModalOpen(false);
+      setApiError("");
+      setErrors({});
+      setFormData({
+        name: "",
+        rollNumber: "",
+        degree: "",
+        branch: "",
+        graduationYear: "",
+        certId: "",
+      });
+    }
+
+    navigate("/admin");
   };
 
   const generateCertId = async () => {
@@ -319,7 +361,7 @@ const AdminPanel = () => {
       } else {
         idPart = Math.random().toString(36).slice(2, 11).toUpperCase();
       }
-    } catch (e) {
+    } catch {
       idPart = Math.random().toString(36).slice(2, 11).toUpperCase();
     }
 
@@ -333,7 +375,7 @@ const AdminPanel = () => {
         // Query backend to see if record exists
         const resp = await axios.get(
           `${API_BASE_URL}/api/verify/${encodeURIComponent(candidate)}`,
-        ).catch((_) => null);
+        ).catch(() => null);
 
         const exists = resp && resp.data && resp.data.exists;
         if (!exists) break; // unique
@@ -343,7 +385,7 @@ const AdminPanel = () => {
         const extra = Math.random().toString(36).slice(2, 8).toUpperCase();
         candidate = `${prefix}-${year}-${extra}`;
       }
-    } catch (e) {
+    } catch {
       // ignore errors checking uniqueness; fallback to candidate
     }
 
@@ -414,19 +456,53 @@ const AdminPanel = () => {
       </header>
 
       <div className="main-content">
-        {/* Modal for quick actions (copy, QR) */}
+        <section className="admin-hero">
+          <div className="admin-hero-copy">
+            <span className="hero-kicker">Issuer console</span>
+            <h2>Publish alumni records with a calm, focused workflow.</h2>
+            <p>
+              Keep every issuance wallet-gated, auditable, and easy to review
+              at a glance.
+            </p>
+            <div className="hero-chips">
+              <span>
+                <CheckCircle size={14} /> Wallet gated
+              </span>
+              <span>
+                <CheckCircle size={14} /> Immutable records
+              </span>
+              <span>
+                <CheckCircle size={14} /> Fast lookup
+              </span>
+            </div>
+          </div>
+          <div className="admin-hero-visual" aria-hidden="true">
+            <div className="admin-hero-surface"></div>
+            <div className="admin-hero-card admin-hero-card-top">
+              <Shield size={18} />
+              <span>Secure issuance</span>
+            </div>
+            <div className="admin-hero-card admin-hero-card-main">
+              <strong>Blockchain ready</strong>
+              <p>Transactions, hashes, and issuance history stay visible.</p>
+            </div>
+            <div className="admin-hero-card admin-hero-card-bottom">
+              <Upload size={18} />
+              <span>Submit to chain</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Modal for quick actions */}
         {modalOpen && result && (
           <div className="modal-overlay" onClick={() => setModalOpen(false)}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
               <h3>Certificate Issued</h3>
               <p>Certificate ID: <strong>{result.certId}</strong></p>
-              <div className="modal-qr">
-                <QRCodeSVG
-                  value={`${window.location.origin}/verify/${result.certId}`}
-                  size={200}
-                  level="H"
-                />
-              </div>
+              <p className="modal-note">
+                Share the verification link or copy the certificate ID for
+                fast manual lookup.
+              </p>
               <div className="modal-actions">
                 <button
                   className="small-btn"
@@ -764,22 +840,15 @@ const AdminPanel = () => {
               </div>
 
               {result && (
-                <div className="qr-section">
-                  <div className="qr-header">
-                    <QrCode size={20} />
-                    <h3>Verification QR Code</h3>
+                <div className="verification-link-card">
+                  <div>
+                    <h3>Verification Link</h3>
+                    <p>
+                      Open the credential record directly without scanning a
+                      code.
+                    </p>
                   </div>
-                  <div className="qr-container">
-                    <QRCodeSVG
-                      value={`${window.location.origin}/verify/${result.certId}`}
-                      size={180}
-                      level="H"
-                      includeMargin={true}
-                    />
-                  </div>
-                  <p className="qr-description">
-                    Scan to verify certificate instantly
-                  </p>
+                  <code>{`${window.location.origin}/verify/${result.certId}`}</code>
                 </div>
               )}
               <div className="success-actions">

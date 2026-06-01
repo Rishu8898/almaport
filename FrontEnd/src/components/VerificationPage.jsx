@@ -86,6 +86,31 @@ const VerificationPage = () => {
         </div>
       </header>
 
+      <section className="verify-intro">
+        <div className="verify-intro-copy">
+          <span className="verify-eyebrow">Blockchain verification</span>
+          <h2>Inspect the credential trail with a clean, audit-friendly view.</h2>
+          <p>
+            We fetch the on-chain record directly, then present the issuer,
+            block, and timestamp in a concise layout that is easy to scan.
+          </p>
+        </div>
+
+        <div className="verify-visual" aria-hidden="true">
+          <div className="verify-visual-glow"></div>
+          <div className="verify-visual-card">
+            <Shield size={34} />
+            <strong>Verified source</strong>
+            <span>Polygon Amoy</span>
+          </div>
+          <div className="verify-visual-strip">
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        </div>
+      </section>
+
       <main className="verify-main">
         {loading && (
           <div className="verify-card verify-loading-card">

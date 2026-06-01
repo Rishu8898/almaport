@@ -1,4 +1,5 @@
 const ProtectedRoute = ({ allowedRoles, children }) => {
+  void allowedRoles;
   return children;
 };
 

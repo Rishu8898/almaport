@@ -1,21 +1,17 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
-import { ethers } from "ethers";
 import {
   GraduationCap,
-  Download,
   Share2,
   Shield,
   FileText,
-  QrCode,
   ArrowLeft,
   CheckCircle,
   User,
   Search,
   XCircle,
 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 import "./StudentDashboard.css";
 import { clearSession } from "../auth/session";
 import { degrees, branches } from "../utils/options";
@@ -33,7 +29,6 @@ const StudentDashboard = () => {
   const [studentData, setStudentData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showQR, setShowQR] = useState(false);
 
   // Verification form state
   const [verifyMode, setVerifyMode] = useState(false);
@@ -48,16 +43,9 @@ const StudentDashboard = () => {
   const [verifyResult, setVerifyResult] = useState(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
 
-  // Auto-search if certId is in URL
-  useEffect(() => {
-    const certId = searchParams.get("certId");
-    if (certId) {
-      setCertIdInput(certId);
-      fetchCertificate(certId);
-    }
-  }, []);
+  const certIdFromUrl = searchParams.get("certId");
 
-  const fetchCertificate = async (certId) => {
+  const fetchCertificate = useCallback(async (certId) => {
     if (!certId || !certId.trim()) {
       setError("Please enter a Certificate ID.");
       return;
@@ -105,7 +93,15 @@ const StudentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Auto-search if certId is in URL
+  useEffect(() => {
+    if (certIdFromUrl) {
+      setCertIdInput(certIdFromUrl);
+      fetchCertificate(certIdFromUrl);
+    }
+  }, [certIdFromUrl, fetchCertificate]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -213,6 +209,44 @@ const StudentDashboard = () => {
       </header>
 
       <div className="dashboard-main">
+        <section className="dashboard-hero">
+          <div className="dashboard-hero-copy">
+            <span className="hero-kicker">Student workspace</span>
+            <h2>Search, inspect, and share your credential record easily.</h2>
+            <p>
+              Review the on-chain details, verify the stored data, and keep a
+              clean shareable link for employers or institutions.
+            </p>
+            <div className="hero-chips">
+              <span>
+                <CheckCircle size={14} /> Search by certificate ID
+              </span>
+              <span>
+                <CheckCircle size={14} /> Compare on-chain details
+              </span>
+              <span>
+                <CheckCircle size={14} /> Share secure link
+              </span>
+            </div>
+          </div>
+          <div className="dashboard-hero-visual" aria-hidden="true">
+            <div className="dashboard-hero-orb"></div>
+            <div className="dashboard-hero-card dashboard-hero-card-main">
+              <Search size={18} />
+              <strong>Quick lookup</strong>
+              <p>Everything you need sits in one verification timeline.</p>
+            </div>
+            <div className="dashboard-hero-card dashboard-hero-card-top">
+              <Shield size={18} />
+              <span>Polygon Amoy</span>
+            </div>
+            <div className="dashboard-hero-card dashboard-hero-card-bottom">
+              <GraduationCap size={18} />
+              <span>Student verified</span>
+            </div>
+          </div>
+        </section>
+
         {/* Search Section */}
         <div className="welcome-card">
           <div className="welcome-content">
@@ -326,13 +360,6 @@ const StudentDashboard = () => {
                   >
                     <Share2 size={20} />
                     <span>Share</span>
-                  </button>
-                  <button
-                    className="action-btn secondary-action"
-                    onClick={() => setShowQR(!showQR)}
-                  >
-                    <QrCode size={20} />
-                    <span>Show QR</span>
                   </button>
                   <button
                     className="action-btn secondary-action"
@@ -595,40 +622,36 @@ const StudentDashboard = () => {
                 </div>
               )}
 
-              {/* QR Code Card */}
-              {showQR && (
-                <div className="dashboard-card qr-card">
-                  <div className="card-header">
-                    <div className="card-header-title">
-                      <QrCode size={24} />
-                      <h3>Verification QR Code</h3>
-                    </div>
-                    <button
-                      className="close-qr-btn"
-                      onClick={() => setShowQR(false)}
-                    >
-                      ×
-                    </button>
+              <div className="dashboard-card verification-link-card">
+                <div className="card-header">
+                  <div className="card-header-title">
+                    <Shield size={24} />
+                    <h3>Verification Link</h3>
                   </div>
-
-                  <div className="qr-display">
-                    <div className="qr-code-wrapper">
-                      <QRCodeSVG
-                        value={`${window.location.origin}/verify/${studentData.certId}`}
-                        size={200}
-                        level="H"
-                        includeMargin={true}
-                      />
-                    </div>
-                    <p className="qr-instruction">
-                      Scan this QR code to instantly verify credentials
-                    </p>
-                    <div className="verification-url">
-                      <code>{`${window.location.origin}/verify/${studentData.certId}`}</code>
-                    </div>
-                  </div>
+                  <span className="status-badge verified">Ready to share</span>
                 </div>
-              )}
+
+                <div className="verification-link-content">
+                  <p>
+                    Share this secure URL with employers or keep it for quick
+                    access to the credential record.
+                  </p>
+                  <div className="verification-url">
+                    <code>{`${window.location.origin}/verify/${studentData.certId}`}</code>
+                  </div>
+                  <button
+                    className="action-btn secondary-action copy-link-btn"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        `${window.location.origin}/verify/${studentData.certId}`,
+                      );
+                    }}
+                  >
+                    <Share2 size={20} />
+                    <span>Copy verification link</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </>
         )}
