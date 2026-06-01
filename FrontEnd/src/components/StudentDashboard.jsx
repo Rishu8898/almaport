@@ -11,6 +11,7 @@ import {
   User,
   Search,
   XCircle,
+  ExternalLink,
 } from "lucide-react";
 import "./StudentDashboard.css";
 import { clearSession } from "../auth/session";
@@ -74,6 +75,7 @@ const StudentDashboard = () => {
         issuer: data.issuerName || "Unknown Issuer",
         issuerAddress: data.issuer,
         timestamp: data.timestamp,
+        ipfsCID: data.ipfsCID,
       });
 
       // Pre-fill certId in verify form
@@ -351,6 +353,21 @@ const StudentDashboard = () => {
                       {studentData.dataHash}
                     </p>
                   </div>
+                  {studentData.ipfsCID && (
+                    <div className="detail-item" style={{ gridColumn: "1 / -1", marginTop: "1rem" }}>
+                      <label>Extra Document</label>
+                      <a
+                        href={`https://gateway.pinata.cloud/ipfs/${studentData.ipfsCID}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="action-btn primary-action"
+                        style={{ textDecoration: "none", display: "inline-flex", width: "fit-content", marginTop: "8px" }}
+                      >
+                        <ExternalLink size={18} />
+                        <span>View Attached PDF</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 <div className="card-actions">

@@ -1,6 +1,10 @@
 const express = require("express");
 const { contract } = require("../blockchain/config");
 const { generateDataHash } = require("../utils/hashUtils");
+const fs = require('fs');
+const path = require('path');
+
+const issuedFile = path.join(__dirname, '..', 'data', 'issued.json');
 
 const router = express.Router();
 
@@ -27,6 +31,19 @@ router.get("/:certId", async (req, res) => {
       return res.status(404).json({ error: "Record not found", certId });
     }
 
+    let ipfsCID = null;
+    try {
+      if (fs.existsSync(issuedFile)) {
+        const db = JSON.parse(fs.readFileSync(issuedFile, 'utf8') || '[]');
+        const record = db.find(r => r.certId === certId);
+        if (record && record.ipfsCID) {
+          ipfsCID = record.ipfsCID;
+        }
+      }
+    } catch (e) {
+      console.error('Error reading issued records for IPFS CID:', e);
+    }
+
     return res.json({
       certId,
       dataHash,
@@ -37,6 +54,7 @@ router.get("/:certId", async (req, res) => {
         ? blockNumber.toNumber()
         : Number(blockNumber),
       exists,
+      ipfsCID,
     });
   } catch (err) {
     console.error("Error in GET /api/verify/:certId:", err);

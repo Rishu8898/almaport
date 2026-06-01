@@ -29,6 +29,7 @@ const AdminPanel = () => {
     graduationYear: "",
     certId: "",
     studentEmail: "",
+    pdfFile: null,
   });
 
   // MetaMask State
@@ -172,11 +173,18 @@ const AdminPanel = () => {
   // degrees and branches imported from shared options
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const { name, value, type, files } = e.target;
+    if (type === 'file') {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: files[0] || null,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
     // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -230,18 +238,27 @@ const AdminPanel = () => {
     try {
       // Submit via backend so server computes the hash and sends transaction
       setApiError("");
+      
+      const submitData = new FormData();
+      submitData.append('name', formData.name);
+      submitData.append('rollNumber', formData.rollNumber);
+      submitData.append('degree', formData.degree);
+      submitData.append('branch', formData.branch);
+      submitData.append('graduationYear', Number(formData.graduationYear));
+      submitData.append('certId', formData.certId);
+      submitData.append('studentEmail', formData.studentEmail);
+      if (formData.pdfFile) {
+        submitData.append('pdfFile', formData.pdfFile);
+      }
+
       const resp = await axios.post(
         `${API_BASE_URL}/api/admin/add`,
+        submitData,
         {
-          name: formData.name,
-          rollNumber: formData.rollNumber,
-          degree: formData.degree,
-          branch: formData.branch,
-          graduationYear: Number(formData.graduationYear),
-          certId: formData.certId,
-          studentEmail: formData.studentEmail,
-        },
-        {},
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
       );
 
       const finalResult = {
@@ -700,6 +717,19 @@ const AdminPanel = () => {
                   {errors.graduationYear && (
                     <span className="error-text">{errors.graduationYear}</span>
                   )}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Extra Document (Optional)
+                  </label>
+                  <input
+                    type="file"
+                    name="pdfFile"
+                    onChange={handleChange}
+                    accept="application/pdf"
+                    className="form-input file-input"
+                  />
                 </div>
 
                 <div className="form-group">

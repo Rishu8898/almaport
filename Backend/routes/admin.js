@@ -5,7 +5,13 @@ const { ethers } = require('ethers');
 const { contract, provider, wallet, getNetworkInfo } = require('../blockchain/config');
 const { generateDataHash } = require('../utils/hashUtils');
 const { sendCertificateEmail } = require('../utils/emailUtils');
+const { uploadToIPFS } = require('../utils/ipfsUtils');
+const multer = require('multer');
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
 // Server-side storage for issued certificates
 const dataDir = path.join(__dirname, '..', 'data');
 const issuedFile = path.join(dataDir, 'issued.json');
@@ -28,7 +34,7 @@ const router = express.Router();
 
 // POST /api/admin/add
 // Body: { name, rollNumber, degree, branch, graduationYear, certId, studentEmail }
-router.post('/add', async (req, res) => {
+router.post('/add', upload.single('pdfFile'), async (req, res) => {
   try {
     const { name, rollNumber, degree, branch, graduationYear, certId, studentEmail } = req.body || {};
 
@@ -37,6 +43,16 @@ router.post('/add', async (req, res) => {
         error: 'Missing required fields',
         required: ['name', 'rollNumber', 'degree', 'branch', 'graduationYear', 'certId', 'studentEmail'],
       });
+    }
+
+    let ipfsCID = null;
+    if (req.file) {
+      try {
+        ipfsCID = await uploadToIPFS(req.file.buffer, `${certId}.pdf`);
+      } catch (uploadErr) {
+        console.error('IPFS upload failed:', uploadErr);
+        return res.status(500).json({ error: 'Failed to upload PDF to IPFS', details: uploadErr.message });
+      }
     }
 
     const isAuthorizedIssuer = await contract.authorizedIssuers(wallet.address);
@@ -72,6 +88,7 @@ router.post('/add', async (req, res) => {
         blockNumber: receipt.blockNumber.toNumber ? receipt.blockNumber.toNumber() : Number(receipt.blockNumber),
         timestamp: Math.floor(Date.now() / 1000),
         issuer: null,
+        ipfsCID: ipfsCID || null,
       };
 
       db.push(record);

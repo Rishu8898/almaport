@@ -177,6 +177,21 @@ const VerificationPage = () => {
                     : "N/A"}
                 </p>
               </div>
+              {data.ipfsCID && (
+                <div className="verify-detail-item" style={{ gridColumn: "1 / -1" }}>
+                  <label>Extra Document</label>
+                  <a 
+                    href={`https://gateway.pinata.cloud/ipfs/${data.ipfsCID}`} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="verify-explorer-link"
+                    style={{ marginTop: '8px', display: 'inline-flex' }}
+                  >
+                    View Attached PDF (IPFS)
+                    <ExternalLink size={16} />
+                  </a>
+                </div>
+              )}
             </div>
 
             {explorerUrl && (
