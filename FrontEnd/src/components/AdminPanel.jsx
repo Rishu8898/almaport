@@ -42,7 +42,6 @@ const AdminPanel = () => {
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [recentIssued, setRecentIssued] = useState([]);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [stats, setStats] = useState({ totalRecords: null, network: null });
@@ -158,33 +157,8 @@ const AdminPanel = () => {
     };
 
     loadStats();
-    loadRecentIssued();
   }, []);
 
-  function loadRecentIssued() {
-    try {
-      const raw = localStorage.getItem('almaPort.issued') || '[]';
-      const arr = JSON.parse(raw);
-      setRecentIssued(Array.isArray(arr) ? arr : []);
-    } catch {
-      setRecentIssued([]);
-    }
-  }
-
-  function persistIssued(record) {
-    try {
-      const raw = localStorage.getItem('almaPort.issued') || '[]';
-      const arr = JSON.parse(raw) || [];
-      // prepend newest
-      arr.unshift(record);
-      // keep only last 50
-      const trimmed = arr.slice(0, 50);
-      localStorage.setItem('almaPort.issued', JSON.stringify(trimmed));
-      setRecentIssued(trimmed);
-    } catch (e) {
-      console.error('Failed to persist issued record locally', e);
-    }
-  }
 
   const copyText = async (text) => {
     try {
@@ -281,15 +255,6 @@ const AdminPanel = () => {
       setResult(finalResult);
       setSubmitted(true);
       setApiError("");
-
-      // Persist issued cert locally for admin convenience
-      const issuedRecord = {
-        certId: finalResult.certId,
-        transactionHash: finalResult.transactionHash,
-        blockNumber: finalResult.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-      };
-      persistIssued(issuedRecord);
 
       // clear form fields immediately but keep result visible until admin closes
       setFormData({
@@ -611,38 +576,6 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Recent issued list (localStorage) */}
-          {recentIssued.length > 0 && (
-            <div className="recent-issued">
-              <h4>Recently Issued</h4>
-              <ul>
-                {recentIssued.slice(0, 10).map((r) => (
-                  <li key={r.certId} className="recent-item">
-                    <span className="recent-cert">{r.certId}</span>
-                    <div className="recent-actions">
-                      <button
-                        className="small-btn"
-                        onClick={async () => {
-                          await copyText(r.certId);
-                          alert('Certificate ID copied to clipboard');
-                        }}
-                      >
-                        Copy
-                      </button>
-                      <a
-                        className="small-btn"
-                        href={`/verify/${encodeURIComponent(r.certId)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        View
-                      </a>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
 
           {!submitted ? (
             <form onSubmit={handleSubmit} className="alumni-form">

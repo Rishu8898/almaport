@@ -152,5 +152,12 @@
     "blockNumber": 39402274,
     "timestamp": 1780334038,
     "issuer": null
+  },
+  {
+    "certId": "CERT-2026-E0CA86FF",
+    "transactionHash": "0xc029b004f1522e18a8c30c9dd8c4408d0788c9a2aa48d6f5f06afdf3c4a90301",
+    "blockNumber": 39402891,
+    "timestamp": 1780334963,
+    "issuer": null
   }
 ]
