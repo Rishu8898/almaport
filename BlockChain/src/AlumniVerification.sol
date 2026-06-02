@@ -29,6 +29,7 @@ contract AlumniVerification {
         uint256 blockNumber; // Block number when added
         bool exists; // Flag to check if record exists
         string issuerName; // Name of the issuing institution
+        bool isRevoked; // Flag to check if record is revoked
     }
 
     /// @dev Mapping from certId to AlumniRecord
@@ -62,6 +63,9 @@ contract AlumniVerification {
 
     /// @dev Emitted when a record is verified
     event RecordVerified(string indexed certId, bool isValid);
+
+    /// @dev Emitted when a record is revoked
+    event RecordRevoked(string indexed certId, address indexed revokedBy, uint256 timestamp);
 
     // ============================================
     // MODIFIERS
@@ -183,7 +187,8 @@ contract AlumniVerification {
             timestamp: block.timestamp,
             blockNumber: block.number,
             exists: true,
-            issuerName: issuerNames[msg.sender]
+            issuerName: issuerNames[msg.sender],
+            isRevoked: false
         });
 
         // Store record
@@ -198,6 +203,16 @@ contract AlumniVerification {
     }
 
     /**
+     * @dev Revoke an alumni record by certificate ID
+     * @param _certId Unique certificate ID
+     */
+    function revokeAlumniRecord(string memory _certId) external onlyAuthorizedIssuer certIdExists(_certId) {
+        require(!records[_certId].isRevoked, "Record is already revoked");
+        records[_certId].isRevoked = true;
+        emit RecordRevoked(_certId, msg.sender, block.timestamp);
+    }
+
+    /**
      * @dev Verify an alumni record by certificate ID
      * @param _certId Certificate ID to verify
      * @param _dataHash Hash to verify against stored hash
@@ -206,11 +221,12 @@ contract AlumniVerification {
      * @return issuerName Name of the issuing institution
      * @return timestamp When the record was added
      * @return blockNumber Block number when record was added
+     * @return isRevoked Boolean indicating if record is revoked
      */
     function verifyRecord(string memory _certId, bytes32 _dataHash)
         external
         certIdExists(_certId)
-        returns (bool isValid, address issuer, string memory issuerName, uint256 timestamp, uint256 blockNumber)
+        returns (bool isValid, address issuer, string memory issuerName, uint256 timestamp, uint256 blockNumber, bool isRevoked)
     {
         AlumniRecord memory record = records[_certId];
 
@@ -219,7 +235,7 @@ contract AlumniVerification {
 
         emit RecordVerified(_certId, isValid);
 
-        return (isValid, record.issuer, record.issuerName, record.timestamp, record.blockNumber);
+        return (isValid, record.issuer, record.issuerName, record.timestamp, record.blockNumber, record.isRevoked);
     }
 
     /**
@@ -231,6 +247,7 @@ contract AlumniVerification {
      * @return timestamp When the record was added
      * @return blockNumber Block number when record was added
      * @return exists Boolean indicating if record exists
+     * @return isRevoked Boolean indicating if record is revoked
      */
     function getRecord(string memory _certId)
         external
@@ -241,12 +258,13 @@ contract AlumniVerification {
             string memory issuerName,
             uint256 timestamp,
             uint256 blockNumber,
-            bool exists
+            bool exists,
+            bool isRevoked
         )
     {
         AlumniRecord memory record = records[_certId];
 
-        return (record.dataHash, record.issuer, record.issuerName, record.timestamp, record.blockNumber, record.exists);
+        return (record.dataHash, record.issuer, record.issuerName, record.timestamp, record.blockNumber, record.exists, record.isRevoked);
     }
 
     /**

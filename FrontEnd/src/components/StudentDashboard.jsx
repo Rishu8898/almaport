@@ -12,10 +12,20 @@ import {
   Search,
   XCircle,
   ExternalLink,
+  Hexagon,
+  Network,
+  Cpu,
+  Layers,
+  Link2,
+  Lock,
+  Key,
+  Download,
 } from "lucide-react";
 import "./StudentDashboard.css";
 import { clearSession } from "../auth/session";
+import toast from "react-hot-toast";
 import { degrees, branches } from "../utils/options";
+import { toPng } from "html-to-image";
 
 const API_BASE_URL =
   import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
@@ -71,7 +81,7 @@ const StudentDashboard = () => {
         dataHash: data.dataHash,
         issueDate,
         blockNumber: data.blockNumber,
-        status: data.exists ? "Verified" : "Not Found",
+        status: data.isRevoked ? "Revoked" : (data.exists ? "Verified" : "Not Found"),
         issuer: data.issuerName || "Unknown Issuer",
         issuerAddress: data.issuer,
         timestamp: data.timestamp,
@@ -80,17 +90,19 @@ const StudentDashboard = () => {
 
       // Pre-fill certId in verify form
       setVerifyForm((prev) => ({ ...prev, certId: data.certId }));
+      toast.success("Record found!");
     } catch (err) {
       if (err.response?.status === 404) {
         setError(
           "No record found for this Certificate ID. Please check and try again.",
         );
+        toast.error("No record found for this ID.");
       } else {
-        setError(
-          err.response?.data?.error ||
+        const errMsg = err.response?.data?.error ||
             err.response?.data?.details ||
-            "Failed to load certificate data.",
-        );
+            "Failed to load certificate data.";
+        setError(errMsg);
+        toast.error(errMsg);
       }
     } finally {
       setLoading(false);
@@ -140,12 +152,14 @@ const StudentDashboard = () => {
       });
 
       if (response.data.valid) {
+        toast.success("Cryptographic hash matched! Data verified.");
         setVerifyResult({
           valid: true,
           message:
             "Data verified successfully! The provided details match the blockchain record.",
         });
       } else {
+        toast.error("Verification failed. Data does not match.");
         setVerifyResult({
           valid: false,
           message:
@@ -155,9 +169,11 @@ const StudentDashboard = () => {
         });
       }
     } catch (err) {
+      const errMsg = err.response?.data?.error || "Verification request failed.";
+      toast.error(errMsg);
       setVerifyResult({
         valid: false,
-        message: err.response?.data?.error || "Verification request failed.",
+        message: errMsg,
       });
     } finally {
       setVerifyLoading(false);
@@ -173,10 +189,44 @@ const StudentDashboard = () => {
         title: "My Alumni Certificate",
         text: "Verify my educational credentials",
         url: verificationUrl,
-      });
+      }).then(() => toast.success("Shared successfully!"))
+        .catch(console.error);
     } else {
       navigator.clipboard.writeText(verificationUrl);
-      alert("Verification link copied to clipboard!");
+      toast.success("Verification link copied to clipboard!");
+    }
+  };
+
+  const handleDownloadCredential = async () => {
+    const element = document.getElementById("credential-card");
+    if (!element) return;
+    
+    const toastId = toast.loading("Generating credential image...");
+    try {
+      // Generate image using html-to-image (much better SVG and modern CSS support)
+      const dataUrl = await toPng(element, {
+        backgroundColor: "#0a0a0f", // Match the dashboard card background
+        pixelRatio: 2,
+        style: {
+          height: 'auto',
+          paddingBottom: '24px' // Compensate for the removed actions button space
+        },
+        filter: (node) => {
+          // Ignore action buttons container
+          return node.dataset?.html2canvasIgnore !== "true";
+        }
+      });
+      
+      // Create hidden link and trigger download
+      const link = document.createElement("a");
+      link.download = `Verified_Credential_${studentData.certId}.png`;
+      link.href = dataUrl;
+      link.click();
+      
+      toast.success("Credential downloaded successfully!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error(`Failed: ${err.message || err.toString()}`, { id: toastId });
     }
   };
 
@@ -213,6 +263,7 @@ const StudentDashboard = () => {
       <div className="dashboard-main">
         <section className="dashboard-hero">
           <div className="dashboard-hero-copy">
+            <GraduationCap className="hero-copy-bg-icon" size={160} />
             <span className="hero-kicker">Student workspace</span>
             <h2>Search, inspect, and share your credential record easily.</h2>
             <p>
@@ -232,7 +283,7 @@ const StudentDashboard = () => {
             </div>
           </div>
           <div className="dashboard-hero-visual" aria-hidden="true">
-            <div className="dashboard-hero-orb"></div>
+            
             <div className="dashboard-hero-card dashboard-hero-card-main">
               <Search size={18} />
               <strong>Quick lookup</strong>
@@ -276,6 +327,18 @@ const StudentDashboard = () => {
           </form>
         </div>
 
+        {/* Cyberpunk Animated Divider */}
+        <div className="cyber-divider-wrapper">
+          <div className="cyber-divider">
+            <div className="cyber-line left-line"></div>
+            <div className="cyber-core">
+              <Shield size={20} className="cyber-core-icon" />
+              <div className="cyber-pulse"></div>
+            </div>
+            <div className="cyber-line right-line"></div>
+          </div>
+        </div>
+
         {loading && (
           <div className="dashboard-loading">
             <p>Loading certificate data...</p>
@@ -292,14 +355,18 @@ const StudentDashboard = () => {
           <>
             {/* Status Badge */}
             <div className="welcome-card" style={{ marginTop: "0" }}>
-              <div className="welcome-content">
-                <h2 className="welcome-title">Certificate Found</h2>
-                <p className="welcome-subtitle">
-                  This credential is stored on the Polygon Amoy blockchain
+              <div className={`welcome-content ${studentData.status === "Revoked" ? "error-text" : ""}`}>
+                <h2 className="welcome-title" style={studentData.status === "Revoked" ? { color: "#dc2626" } : {}}>
+                  {studentData.status === "Revoked" ? "Certificate Revoked" : "Certificate Found"}
+                </h2>
+                <p className="welcome-subtitle" style={studentData.status === "Revoked" ? { color: "#991b1b" } : {}}>
+                  {studentData.status === "Revoked" 
+                    ? "🚨 WARNING: This certificate has been officially REVOKED by the issuing institution. It is no longer valid."
+                    : "This credential is stored on the Polygon Amoy blockchain"}
                 </p>
               </div>
-              <div className="verification-badge-large">
-                <CheckCircle size={24} />
+              <div className="verification-badge-large" style={studentData.status === "Revoked" ? { background: "rgba(239, 68, 68, 0.1)", color: "#ef4444" } : {}}>
+                {studentData.status === "Revoked" ? <XCircle size={24} color="#ef4444" /> : <CheckCircle size={24} />}
                 <span>{studentData.status}</span>
               </div>
             </div>
@@ -307,7 +374,7 @@ const StudentDashboard = () => {
             {/* Main Grid */}
             <div className="dashboard-grid">
               {/* Certificate Details Card */}
-              <div className="dashboard-card certificate-card">
+              <div className="dashboard-card certificate-card" id="credential-card">
                 <div className="card-header">
                   <div className="card-header-title">
                     <FileText size={24} />
@@ -315,6 +382,7 @@ const StudentDashboard = () => {
                   </div>
                   <span
                     className={`status-badge ${studentData.status === "Verified" ? "verified" : "unverified"}`}
+                    style={studentData.status === "Revoked" ? { background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.2)" } : {}}
                   >
                     {studentData.status}
                   </span>
@@ -353,7 +421,7 @@ const StudentDashboard = () => {
                       {studentData.dataHash}
                     </p>
                   </div>
-                  {studentData.ipfsCID && (
+                  {studentData.ipfsCID && studentData.status !== "Revoked" && (
                     <div className="detail-item" style={{ gridColumn: "1 / -1", marginTop: "1rem" }}>
                       <label>Extra Document</label>
                       <a
@@ -370,7 +438,14 @@ const StudentDashboard = () => {
                   )}
                 </div>
 
-                <div className="card-actions">
+                <div className="card-actions" data-html2canvas-ignore="true">
+                  <button
+                    className="action-btn secondary-action"
+                    onClick={handleDownloadCredential}
+                  >
+                    <Download size={20} />
+                    <span>Download</span>
+                  </button>
                   <button
                     className="action-btn secondary-action"
                     onClick={handleShare}
@@ -378,13 +453,15 @@ const StudentDashboard = () => {
                     <Share2 size={20} />
                     <span>Share</span>
                   </button>
-                  <button
-                    className="action-btn secondary-action"
-                    onClick={() => setVerifyMode(!verifyMode)}
-                  >
-                    <Shield size={20} />
-                    <span>{verifyMode ? "Hide Verify" : "Verify My Data"}</span>
-                  </button>
+                  {studentData.status !== "Revoked" && (
+                    <button
+                      className="action-btn secondary-action"
+                      onClick={() => setVerifyMode(!verifyMode)}
+                    >
+                      <Shield size={20} />
+                      <span>{verifyMode ? "Hide Verify" : "Verify My Data"}</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -459,9 +536,10 @@ const StudentDashboard = () => {
               </div>
 
               {/* Verify Data Card */}
-              {verifyMode && (
-                <div className="dashboard-card certificate-card">
-                  <div className="card-header">
+              {verifyMode && studentData.status !== "Revoked" && (
+                <>
+                  <div className="dashboard-card certificate-card">
+                    <div className="card-header">
                     <div className="card-header-title">
                       <Shield size={24} />
                       <h3>Verify Your Details</h3>
@@ -637,6 +715,22 @@ const StudentDashboard = () => {
                     </>
                   )}
                 </div>
+
+                {/* Empty Right-Side Illustration Card */}
+                <div className="dashboard-card crypto-illustration-card">
+                  <div className="crypto-visual">
+                    <div className="crypto-glow"></div>
+                    <Shield size={64} className="crypto-icon-main" />
+                    <div className="crypto-orbit orbit-1"><Lock size={20} /></div>
+                    <div className="crypto-orbit orbit-2"><Key size={20} /></div>
+                    <div className="crypto-orbit orbit-3"><CheckCircle size={20} /></div>
+                  </div>
+                  <div className="crypto-text">
+                    <h3>Zero-Knowledge Local Verification</h3>
+                    <p>Your details are processed purely within your browser to compute a cryptographic hash. This hash is compared against the immutable blockchain record. No personal data ever leaves your device.</p>
+                  </div>
+                </div>
+              </>
               )}
 
               <div className="dashboard-card verification-link-card">

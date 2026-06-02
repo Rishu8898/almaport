@@ -11,6 +11,17 @@ The system issues tamper-proof, immutable educational credentials. The text deta
 
 The system follows a three-tier architecture augmented by decentralized storage:
 
+```mermaid
+graph TD
+    User([User / Admin]) --> |Interacts with| Frontend(React Frontend)
+    Frontend --> |API Calls| Backend(Node.js Backend)
+    Backend --> |Upload Document| IPFS(Pinata / IPFS)
+    Backend --> |Deploy/Interact| SmartContract(Polygon Smart Contract)
+    
+    IPFS -.-> |Returns CID| Backend
+    SmartContract -.-> |Transaction Receipt| Backend
+```
+
 1. **Frontend (React + Vite)**: 
    - Provides user interfaces for Admins (issuing certificates) and Students/Public (verifying certificates).
    - Handles client-side validation and responsive UI rendering.
@@ -24,6 +35,40 @@ The system follows a three-tier architecture augmented by decentralized storage:
 4. **Blockchain (Polygon Smart Contract)**:
    - Stores the generated data hash, certificate ID, issuer address, and issuance timestamp.
    - Guarantees immutability and publicly verifies data integrity.
+
+---
+
+## 🧩 UML Diagram
+
+The following class diagram illustrates the major components and their interactions:
+
+```mermaid
+classDiagram
+    class Frontend {
+        +AdminPanel
+        +StudentDashboard
+        +VerificationPage
+        +fetch()
+    }
+    class Backend {
+        +server.js
+        +routes/admin.js
+        +routes/verify.js
+        +generateHash()
+    }
+    class PinataIPFS {
+        +uploadFile()
+        +getCID()
+    }
+    class SmartContract {
+        +addAlumniRecord(certId, hash)
+        +getRecord(certId)
+    }
+    
+    Frontend --> Backend : REST API
+    Backend --> PinataIPFS : Pinata SDK
+    Backend --> SmartContract : ethers.js
+```
 
 ---
 
@@ -78,6 +123,63 @@ sequenceDiagram
 - The backend queries the Polygon blockchain to fetch the issuer and timestamp details for that `certId`.
 - The backend appends the IPFS `CID` (if it exists) to the response.
 - The user is presented with the blockchain verification details and a button to view the original PDF document directly from the IPFS gateway.
+
+---
+
+## 💻 Important Functional Code
+
+### 1. Backend Data Hashing (`hashUtils.js`)
+The backend generates a strict `keccak256` hash of the student's details before sending it to the blockchain:
+```javascript
+function generateDataHash({ name, rollNumber, degree, branch, graduationYear }) {
+  const normName = name.trim().toLowerCase();
+  const normRoll = rollNumber.trim().toLowerCase();
+  const normDegree = degree.trim().toLowerCase();
+  const normBranch = branch.trim().toLowerCase();
+  const yearAsString = String(graduationYear).trim();
+
+  return ethers.utils.solidityKeccak256(
+    ["string", "string", "string", "string", "string"],
+    [normName, normRoll, normDegree, normBranch, yearAsString]
+  );
+}
+```
+
+### 2. Smart Contract Record Addition (`AlumniVerification.sol`)
+The Polygon smart contract stores the certificate record and ensures it cannot be altered:
+```solidity
+function addAlumniRecord(string memory _certId, bytes32 _dataHash)
+    external
+    onlyAuthorizedIssuer
+    certIdNotExists(_certId)
+    returns (bool success, uint256 timestamp, uint256 blockNumber)
+{
+    AlumniRecord memory newRecord = AlumniRecord({
+        certId: _certId,
+        dataHash: _dataHash,
+        issuer: msg.sender,
+        timestamp: block.timestamp,
+        blockNumber: block.number,
+        exists: true,
+        issuerName: issuerNames[msg.sender]
+    });
+
+    records[_certId] = newRecord;
+    certificateIds.push(_certId);
+    totalRecords++;
+
+    emit AlumniRecordAdded(_certId, _dataHash, msg.sender, issuerNames[msg.sender], block.timestamp, block.number);
+
+    return (true, block.timestamp, block.number);
+}
+```
+
+---
+
+## 📸 Results Image
+
+![Verification Result Placeholder](./assets/verification_result_placeholder.png)
+> *Note: This is a placeholder. Replace `./assets/verification_result_placeholder.png` with the actual screenshot path of the successful verification screen once captured.*
 
 ---
 

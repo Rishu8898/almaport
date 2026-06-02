@@ -20,7 +20,7 @@ contract AuthorizeIssuer is Script {
         // Get configuration from environment variables
         string memory contractAddressStr = vm.envString("CONTRACT_ADDRESS");
         string memory issuerAddressStr = vm.envString("ISSUER_ADDRESS");
-        string memory issuerName = vm.envOr("ISSUER_NAME", "Authorized Institution");
+        string memory issuerName = vm.envOr("ISSUER_NAME", string("Authorized Institution"));
 
         // Convert string to address
         address contractAddress = vm.parseAddress(contractAddressStr);

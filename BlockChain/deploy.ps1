@@ -39,22 +39,22 @@ function Write-Header {
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "$Green✓ $Message$Reset" -ForegroundColor Green
+    Write-Host "$Green[+] $Message$Reset" -ForegroundColor Green
 }
 
 function Write-Error-Custom {
     param([string]$Message)
-    Write-Host "$Red✗ $Message$Reset" -ForegroundColor Red
+    Write-Host "$Red[-] $Message$Reset" -ForegroundColor Red
 }
 
 function Write-Warning {
     param([string]$Message)
-    Write-Host "$Yellow⚠ $Message$Reset" -ForegroundColor Yellow
+    Write-Host "$Yellow[!] $Message$Reset" -ForegroundColor Yellow
 }
 
 function Write-Info {
     param([string]$Message)
-    Write-Host "$Blue→ $Message$Reset" -ForegroundColor Cyan
+    Write-Host "$Blue-> $Message$Reset" -ForegroundColor Cyan
 }
 
 # ============================================
@@ -99,7 +99,7 @@ $envContent -split "`n" | ForEach-Object {
         $key = $matches[1].Trim()
         $value = $matches[2].Trim()
         # Remove quotes if present
-        $value = $value -replace '^["]|["]$', ''
+        $value = $value.Replace("`"", "")
         Set-Item -Path "env:$key" -Value $value
     }
 }
@@ -142,6 +142,7 @@ Write-Info "This may take 1-2 minutes..."
 
 $env:INSTITUTION_NAME = $InstitutionName
 $deployOutput = & forge script script/DeployAlumniVerification.s.sol `
+    --tc DeployAlumniVerification `
     --rpc-url $RpcUrl `
     --private-key $env:PRIVATE_KEY `
     --broadcast `

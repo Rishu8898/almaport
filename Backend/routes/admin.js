@@ -151,6 +151,42 @@ router.get('/issued', async (req, res) => {
   }
 });
 
+// POST /api/admin/revoke
+// Body: { certId }
+router.post('/revoke', async (req, res) => {
+  try {
+    const { certId } = req.body || {};
+
+    if (!certId) {
+      return res.status(400).json({ error: 'Missing required field: certId' });
+    }
+
+    const isAuthorizedIssuer = await contract.authorizedIssuers(wallet.address);
+    if (!isAuthorizedIssuer) {
+      return res.status(403).json({
+        error: 'Backend wallet is not authorized to revoke certificates',
+        details: `Authorize ${wallet.address} on the smart contract.`,
+      });
+    }
+
+    // Send transaction to blockchain
+    const tx = await contract.revokeAlumniRecord(certId, await getTxOverrides());
+    const receipt = await tx.wait();
+
+    return res.status(200).json({
+      certId,
+      transactionHash: receipt.transactionHash,
+      message: 'Certificate revoked successfully'
+    });
+  } catch (err) {
+    console.error('Error in POST /api/admin/revoke:', err);
+    return res.status(500).json({
+      error: 'Failed to revoke alumni record',
+      details: err?.reason || err?.error?.reason || err?.message || 'Unknown error',
+    });
+  }
+});
+
 module.exports = router;
 
 

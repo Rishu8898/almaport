@@ -6,9 +6,38 @@ import VerificationPage from "./components/VerificationPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
+import { Toaster } from "react-hot-toast";
+
 function App() {
   return (
-    <Router>
+    <>
+      <Toaster 
+        position="bottom-right" 
+        toastOptions={{ 
+          style: { 
+            background: 'rgba(10, 10, 15, 0.9)', 
+            color: '#e0e6ed', 
+            border: '1px solid rgba(0, 240, 255, 0.3)',
+            backdropFilter: 'blur(10px)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#00f0ff',
+              secondary: '#000',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ff003c',
+              secondary: '#fff',
+            },
+            style: {
+              border: '1px solid rgba(255, 0, 60, 0.3)',
+            }
+          }
+        }} 
+      />
+      <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route
@@ -30,6 +59,7 @@ function App() {
         <Route path="/verify/:certId" element={<VerificationPage />} />
       </Routes>
     </Router>
+    </>
   );
 }
 

@@ -7,6 +7,11 @@ import {
   CheckCircle,
   Lock,
   Sparkles,
+  Hexagon,
+  Network,
+  Cpu,
+  Layers,
+  Link2,
 } from "lucide-react";
 import "./HomePage.css";
 
@@ -78,9 +83,6 @@ const HomePage = () => {
           </div>
 
           <div className="hero-visual" aria-hidden="true">
-            <div className="hero-orb hero-orb-one"></div>
-            <div className="hero-orb hero-orb-two"></div>
-            <div className="hero-orb hero-orb-three"></div>
             <div className="hero-stack">
               <div className="hero-mini-card hero-mini-card-top">
                 <Shield size={18} />
@@ -103,6 +105,18 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Cyberpunk Animated Divider */}
+      <div className="cyber-divider-wrapper">
+        <div className="cyber-divider">
+          <div className="cyber-line left-line"></div>
+          <div className="cyber-core">
+            <Shield size={20} className="cyber-core-icon" />
+            <div className="cyber-pulse"></div>
+          </div>
+          <div className="cyber-line right-line"></div>
+        </div>
+      </div>
 
       {/* Login Cards Section */}
       <section className="login-section">

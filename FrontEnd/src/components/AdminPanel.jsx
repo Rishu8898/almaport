@@ -13,8 +13,9 @@ import {
   Check,
 } from "lucide-react";
 import "./AdminPanel.css";
-import { clearSession, getUser } from "../auth/session";
+import { getUser } from "../auth/session";
 import { degrees, branches } from "../utils/options";
+import toast from "react-hot-toast";
 
 const API_BASE_URL =
   import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
@@ -46,6 +47,12 @@ const AdminPanel = () => {
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [stats, setStats] = useState({ totalRecords: null, network: null });
+
+  // Revoke state
+  const [revokeCertId, setRevokeCertId] = useState("");
+  const [revoking, setRevoking] = useState(false);
+  const [revokeSuccess, setRevokeSuccess] = useState("");
+  const [revokeError, setRevokeError] = useState("");
 
   const user = getUser();
 
@@ -104,7 +111,8 @@ const AdminPanel = () => {
   // ✅ Connect MetaMask Wallet
   const connectMetaMask = async () => {
     if (typeof window.ethereum === "undefined") {
-      setWalletError("MetaMask is not installed. Please install it first.");
+      toast.error("MetaMask is not installed. Please install it first.");
+      setWalletError("MetaMask is not installed.");
       return;
     }
 
@@ -120,12 +128,15 @@ const AdminPanel = () => {
         setWalletAddress(accounts[0]);
         setIsConnected(true);
         setWalletError("");
+        toast.success("Wallet connected successfully!");
       }
     } catch (error) {
       if (error.code === 4001) {
-        setWalletError("Connection rejected. Please try again.");
+        toast.error("Connection rejected by user.");
+        setWalletError("Connection rejected.");
       } else {
-        setWalletError("Failed to connect MetaMask wallet.");
+        toast.error("Failed to connect MetaMask wallet.");
+        setWalletError("Failed to connect.");
       }
       console.error("MetaMask connection error:", error);
     } finally {
@@ -137,6 +148,7 @@ const AdminPanel = () => {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(walletAddress);
     setShowCopied(true);
+    toast.success("Address copied to clipboard");
     setTimeout(() => setShowCopied(false), 2000);
   };
 
@@ -226,19 +238,22 @@ const AdminPanel = () => {
     e.preventDefault();
 
     if (!isConnected || !walletAddress) {
-      setWalletError("Please connect your MetaMask wallet first");
+      toast.error("Please connect your MetaMask wallet first");
       return;
     }
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      toast.error("Please fix the validation errors");
+      return;
+    }
 
     setLoading(true);
     setApiError("");
 
+    const toastId = toast.loading('Publishing certificate to blockchain...');
+
     try {
       // Submit via backend so server computes the hash and sends transaction
-      setApiError("");
-      
       const submitData = new FormData();
       submitData.append('name', formData.name);
       submitData.append('rollNumber', formData.rollNumber);
@@ -271,7 +286,8 @@ const AdminPanel = () => {
 
       setResult(finalResult);
       setSubmitted(true);
-      setApiError("");
+
+      toast.success("Certificate successfully published to blockchain!", { id: toastId });
 
       // clear form fields immediately but keep result visible until admin closes
       setFormData({
@@ -282,6 +298,7 @@ const AdminPanel = () => {
         graduationYear: "",
         certId: "",
         studentEmail: "",
+        pdfFile: null,
       });
 
       // Open modal with quick actions
@@ -290,51 +307,55 @@ const AdminPanel = () => {
       console.error("❌ Error:", error);
 
       if (error.code === 4001) {
-        setApiError("Transaction rejected by user");
+        toast.error("Transaction rejected by user", { id: toastId });
       } else if (error.code === "INSUFFICIENT_FUNDS") {
-        setApiError("Insufficient balance to pay gas fees");
+        toast.error("Insufficient balance to pay gas fees", { id: toastId });
       } else if (error.reason) {
-        setApiError(`Error: ${error.reason}`);
-      } else if (error.message.includes("not an authorized issuer")) {
-        setApiError("Your wallet is not authorized as an issuer");
+        toast.error(`Error: ${error.reason}`, { id: toastId });
+      } else if (error.response?.data?.error) {
+        toast.error(error.response.data.error, { id: toastId });
       } else {
-        setApiError(error.message || "Failed to submit to blockchain");
+        toast.error(error.message || "Failed to submit to blockchain", { id: toastId });
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      if (typeof window.ethereum?.request === "function") {
-        await window.ethereum.request({
-          method: "wallet_revokePermissions",
-          params: [{ eth_accounts: {} }],
-        });
-      }
-    } catch (error) {
-      console.info("MetaMask permission revoke skipped:", error);
-    } finally {
-      clearSession();
-      resetWalletState();
-      setSubmitted(false);
-      setResult(null);
-      setModalOpen(false);
-      setApiError("");
-      setErrors({});
-      setFormData({
-        name: "",
-        rollNumber: "",
-        degree: "",
-        branch: "",
-        graduationYear: "",
-        certId: "",
-        studentEmail: "",
-      });
+
+
+  const handleRevoke = async (e) => {
+    e.preventDefault();
+    if (!isConnected || !walletAddress) {
+      toast.error("Please connect your MetaMask wallet first");
+      return;
+    }
+    if (!revokeCertId.trim()) {
+      toast.error("Certificate ID is required");
+      return;
     }
 
-    navigate("/admin");
+    if (!window.confirm("Are you sure you want to revoke this certificate? This action cannot be undone on the blockchain.")) {
+      return;
+    }
+
+    setRevoking(true);
+
+    const toastId = toast.loading('Revoking certificate on blockchain...');
+
+    try {
+      const resp = await axios.post(`${API_BASE_URL}/api/admin/revoke`, { certId: revokeCertId.trim() });
+      toast.success(`Successfully revoked certificate: ${resp.data.certId}`, { id: toastId });
+      setRevokeSuccess(`Successfully revoked certificate: ${resp.data.certId}`);
+      setRevokeCertId("");
+    } catch (err) {
+      console.error("Revoke Error:", err);
+      const errMsg = err.response?.data?.error || "Failed to revoke certificate";
+      toast.error(errMsg, { id: toastId });
+      setRevokeError(errMsg);
+    } finally {
+      setRevoking(false);
+    }
   };
 
   const generateCertId = async () => {
@@ -438,10 +459,7 @@ const AdminPanel = () => {
                 </div>
               </div>
             )}
-            <span className="admin-user-email">{user?.email || "Admin"}</span>
-            <button className="admin-logout-btn" onClick={handleLogout}>
-              Logout
-            </button>
+            <span className="admin-user-email cyberpunk-text">{user?.email || "Admin"}</span>
           </div>
         </div>
       </header>
@@ -499,7 +517,7 @@ const AdminPanel = () => {
                   className="small-btn"
                   onClick={async () => {
                     await copyText(result.certId);
-                    alert('Certificate ID copied to clipboard');
+                    toast.success('Certificate ID copied to clipboard');
                   }}
                 >
                   Copy Cert ID
@@ -640,9 +658,8 @@ const AdminPanel = () => {
                     name="rollNumber"
                     value={formData.rollNumber}
                     onChange={handleChange}
-                    className={`form-input ${
-                      errors.rollNumber ? "input-error" : ""
-                    }`}
+                    className={`form-input ${errors.rollNumber ? "input-error" : ""
+                      }`}
                     placeholder="e.g., 2020CS001"
                   />
                   {errors.rollNumber && (
@@ -658,9 +675,8 @@ const AdminPanel = () => {
                     name="degree"
                     value={formData.degree}
                     onChange={handleChange}
-                    className={`form-select ${
-                      errors.degree ? "input-error" : ""
-                    }`}
+                    className={`form-select ${errors.degree ? "input-error" : ""
+                      }`}
                   >
                     <option value="">Select Degree</option>
                     {degrees.map((degree) => (
@@ -682,9 +698,8 @@ const AdminPanel = () => {
                     name="branch"
                     value={formData.branch}
                     onChange={handleChange}
-                    className={`form-select ${
-                      errors.branch ? "input-error" : ""
-                    }`}
+                    className={`form-select ${errors.branch ? "input-error" : ""
+                      }`}
                   >
                     <option value="">Select Branch</option>
                     {branches.map((branch) => (
@@ -707,9 +722,8 @@ const AdminPanel = () => {
                     name="graduationYear"
                     value={formData.graduationYear}
                     onChange={handleChange}
-                    className={`form-input ${
-                      errors.graduationYear ? "input-error" : ""
-                    }`}
+                    className={`form-input ${errors.graduationYear ? "input-error" : ""
+                      }`}
                     placeholder="e.g., 2024"
                     min="1950"
                     max={new Date().getFullYear() + 5}
@@ -742,9 +756,8 @@ const AdminPanel = () => {
                       name="certId"
                       value={formData.certId}
                       onChange={handleChange}
-                      className={`form-input ${
-                        errors.certId ? "input-error" : ""
-                      }`}
+                      className={`form-input ${errors.certId ? "input-error" : ""
+                        }`}
                       placeholder="CERT-2024-XXXXX"
                     />
                     <button
@@ -846,7 +859,7 @@ const AdminPanel = () => {
                   onClick={async () => {
                     if (result?.certId) {
                       await copyText(result.certId);
-                      alert('Certificate ID copied to clipboard');
+                      toast.success('Certificate ID copied to clipboard');
                     }
                   }}
                 >
@@ -870,6 +883,82 @@ const AdminPanel = () => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Cyberpunk Animated Divider */}
+        <div className="cyber-divider-wrapper">
+          <div className="cyber-divider">
+            <div className="cyber-line left-line"></div>
+            <div className="cyber-core">
+              <Shield size={20} className="cyber-core-icon" />
+              <div className="cyber-pulse"></div>
+            </div>
+            <div className="cyber-line right-line"></div>
+          </div>
+          <div className="cyber-status-text">
+            <span>SECURE CONNECTION ESTABLISHED // BLOCKCHAIN SYNCED</span>
+          </div>
+        </div>
+
+        {/* Revoke Section */}
+        <div className="form-section danger-zone" style={{ marginTop: '2rem' }}>
+          <div className="section-header">
+            <div className="section-title-wrapper" style={{ color: '#ff003c', textShadow: '0 0 10px rgba(255, 0, 60, 0.4)' }}>
+              <AlertCircle className="section-icon" size={24} color="#ff003c" />
+              <h2 className="section-title" style={{ color: '#ff003c' }}>Revoke Certificate</h2>
+            </div>
+            <p className="section-description">
+              Invalidate an issued certificate. This will flag it as revoked on the blockchain permanently.
+            </p>
+          </div>
+
+          {revokeError && (
+            <div className="api-error-banner">
+              <AlertCircle size={18} className="api-error-icon" />
+              <span>{revokeError}</span>
+            </div>
+          )}
+
+          {revokeSuccess && (
+            <div className="success-container" style={{ padding: '1rem', minHeight: 'auto', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0, 240, 255, 0.1)', border: '1px solid #00f0ff' }}>
+              <CheckCircle className="success-icon" size={24} color="#00f0ff" />
+              <span style={{ color: '#00f0ff', fontWeight: 700, textShadow: '0 0 5px rgba(0, 240, 255, 0.5)' }}>{revokeSuccess}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleRevoke} className="alumni-form">
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label">
+                Certificate ID to Revoke <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                value={revokeCertId}
+                onChange={(e) => setRevokeCertId(e.target.value)}
+                className="form-input"
+                placeholder="Enter Certificate ID"
+              />
+            </div>
+            <div className="form-actions">
+              <button
+                type="submit"
+                disabled={revoking || !isConnected}
+                className="submit-btn revoke-btn"
+              >
+                {revoking ? (
+                  <>
+                    <Loader2 className="spinner" size={20} />
+                    Revoking...
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle size={20} />
+                    Revoke on Blockchain
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

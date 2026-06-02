@@ -183,7 +183,8 @@ contract TestAlumniVerification is Script {
             string memory issuerName,
             uint256 timestamp,
             uint256 blockNumber,
-            bool exists
+            bool exists,
+            bool isRevoked
         ) = alumniVerification.getRecord(certId);
 
         require(exists, "Record does not exist");

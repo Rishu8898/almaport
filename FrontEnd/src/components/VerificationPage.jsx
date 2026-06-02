@@ -6,6 +6,7 @@ import {
   XCircle,
   ArrowLeft,
   ExternalLink,
+  AlertCircle,
 } from "lucide-react";
 import "./VerificationPage.css";
 
@@ -68,7 +69,8 @@ const VerificationPage = () => {
       ? `https://amoy.polygonscan.com/block/${data.blockNumber}`
       : "";
 
-  const isVerified = !error && data && data.exists;
+  const isVerified = !error && data && data.exists && !data.isRevoked;
+  const isRevoked = data && data.isRevoked;
 
   return (
     <div className="verify-page-container">
@@ -134,21 +136,39 @@ const VerificationPage = () => {
         )}
 
         {!loading && !error && data && (
-          <div className="verify-card verify-result-card">
-            <div
-              className={`verify-status-icon ${isVerified ? "success" : "error"}`}
-            >
-              {isVerified ? <CheckCircle size={40} /> : <XCircle size={40} />}
-            </div>
-            <h2>
-              {isVerified ? "Certificate Verified" : "Certificate Not Found"}
-            </h2>
+          <div className={`verify-card verify-result-card ${isRevoked ? 'verify-revoked-card' : ''}`}>
+            {isRevoked ? (
+              <>
+                <div className="verify-status-icon error">
+                  <AlertCircle size={40} />
+                </div>
+                <h2 style={{ color: '#dc2626' }}>Certificate Revoked</h2>
+                <div style={{ backgroundColor: '#fef2f2', border: '1px solid #f87171', color: '#991b1b', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
+                  <strong>🚨 WARNING:</strong> This certificate has been officially REVOKED by the issuing institution. It is no longer valid.
+                </div>
+                <p className="verify-cert-id">
+                  Certificate ID: <code>{data.certId}</code>
+                </p>
+              </>
+            ) : (
+              <>
+                <div
+                  className={`verify-status-icon ${isVerified ? "success" : "error"}`}
+                >
+                  {isVerified ? <CheckCircle size={40} /> : <XCircle size={40} />}
+                </div>
+                <h2>
+                  {isVerified ? "Certificate Verified" : "Certificate Not Found"}
+                </h2>
+    
+                <p className="verify-cert-id">
+                  Certificate ID: <code>{data.certId}</code>
+                </p>
+              </>
+            )}
 
-            <p className="verify-cert-id">
-              Certificate ID: <code>{data.certId}</code>
-            </p>
-
-            <div className="verify-details-grid">
+            {!isRevoked && (
+              <div className="verify-details-grid">
               <div className="verify-detail-item">
                 <label>Status</label>
                 <p>
@@ -193,6 +213,7 @@ const VerificationPage = () => {
                 </div>
               )}
             </div>
+            )}
 
             {explorerUrl && (
               <a

@@ -221,7 +221,7 @@ contract AlumniVerificationTest is Test {
         alumniVerification.addAlumniRecord(SAMPLE_CERT_ID, dataHash);
 
         // Verify with correct hash
-        (bool isValid, address issuer, string memory issuerName, uint256 timestamp, uint256 blockNumber) =
+        (bool isValid, address issuer, string memory issuerName, uint256 timestamp, uint256 blockNumber, bool isRevoked) =
             alumniVerification.verifyRecord(SAMPLE_CERT_ID, dataHash);
 
         assertTrue(isValid);
@@ -239,7 +239,7 @@ contract AlumniVerificationTest is Test {
         alumniVerification.addAlumniRecord(SAMPLE_CERT_ID, dataHash);
 
         // Verify with wrong hash
-        (bool isValid,,,,) = alumniVerification.verifyRecord(SAMPLE_CERT_ID, wrongHash);
+        (bool isValid,,,,,) = alumniVerification.verifyRecord(SAMPLE_CERT_ID, wrongHash);
 
         assertFalse(isValid);
     }
@@ -268,7 +268,8 @@ contract AlumniVerificationTest is Test {
             string memory issuerName,
             uint256 timestamp,
             uint256 blockNumber,
-            bool exists
+            bool exists,
+            bool isRevoked
         ) = alumniVerification.getRecord(SAMPLE_CERT_ID);
 
         assertEq(storedHash, dataHash);
@@ -284,7 +285,8 @@ contract AlumniVerificationTest is Test {
             string memory issuerName,
             uint256 timestamp,
             uint256 blockNumber,
-            bool exists
+            bool exists,
+            bool isRevoked
         ) = alumniVerification.getRecord("NON-EXISTENT");
 
         assertEq(storedHash, bytes32(0));
@@ -367,7 +369,7 @@ contract AlumniVerificationTest is Test {
         alumniVerification.addAlumniRecord(SAMPLE_CERT_ID, dataHash);
 
         // 3. Verify the record
-        (bool isValid, address issuer,,,) = alumniVerification.verifyRecord(SAMPLE_CERT_ID, dataHash);
+        (bool isValid, address issuer,,,,) = alumniVerification.verifyRecord(SAMPLE_CERT_ID, dataHash);
 
         assertTrue(isValid);
         assertEq(issuer, issuer1);

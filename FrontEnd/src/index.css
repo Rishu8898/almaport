@@ -126,6 +126,11 @@ textarea {
   font: inherit;
 }
 
+select option {
+  background-color: #0b1220; /* Dark background */
+  color: #f8fafc; /* Light text */
+}
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;

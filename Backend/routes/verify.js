@@ -19,13 +19,14 @@ router.get("/:certId", async (req, res) => {
 
     const result = await contract.getRecord(certId);
 
-    // Tuple: [dataHash, issuer, issuerName, timestamp, blockNumber, exists]
+    // Tuple: [dataHash, issuer, issuerName, timestamp, blockNumber, exists, isRevoked]
     const dataHash = result[0];
     const issuer = result[1];
     const issuerName = result[2];
     const timestamp = result[3];
     const blockNumber = result[4];
     const exists = result[5];
+    const isRevoked = result[6];
 
     if (!exists) {
       return res.status(404).json({ error: "Record not found", certId });
@@ -54,6 +55,7 @@ router.get("/:certId", async (req, res) => {
         ? blockNumber.toNumber()
         : Number(blockNumber),
       exists,
+      isRevoked,
       ipfsCID,
     });
   } catch (err) {
@@ -101,7 +103,7 @@ router.post("/check", async (req, res) => {
       graduationYear,
     });
 
-    // verifyRecord returns: (bool isValid, address issuer, string issuerName, uint256 timestamp, uint256 blockNumber)
+    // verifyRecord returns: (bool isValid, address issuer, string issuerName, uint256 timestamp, uint256 blockNumber, bool isRevoked)
     // verifyRecord is NOT a view function (it emits events), so use callStatic for read-only check
     const result = await contract.callStatic.verifyRecord(certId, dataHash);
 
@@ -110,6 +112,7 @@ router.post("/check", async (req, res) => {
     const issuerName = result[2];
     const timestamp = result[3];
     const blockNumber = result[4];
+    const isRevoked = result[5];
 
     // Fetch stored hash so the client can compare hashes when validation fails
     let storedHash = null;
@@ -129,6 +132,7 @@ router.post("/check", async (req, res) => {
       blockNumber: blockNumber.toNumber
         ? blockNumber.toNumber()
         : Number(blockNumber),
+      isRevoked,
     });
   } catch (err) {
     console.error("Error in POST /api/verify/check:", err);
